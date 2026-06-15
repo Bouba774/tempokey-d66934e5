@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { HarmonicMixing } from "./HarmonicMixing";
 import { SetBuilder } from "./SetBuilder";
+import { DjDashboard } from "./viz/DjDashboard";
 import { confidenceLabel, confidenceTone } from "@/lib/corrections";
 
 export function AnalysisPanel() {
