@@ -1,5 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useLibraryStore, generateMockTracks } from "@/lib/library-store";
+import { useEffect, useRef, useState } from "react";
+import {
+  useLibraryStore,
+  buildLibraryFromFiles,
+  type ImportProgress,
+} from "@/lib/library-store";
+import { ImportProgressModal } from "@/components/ImportProgressModal";
 import { FolderPlus, Clock } from "lucide-react";
 import logoAsset from "@/assets/tempokey-logo.png.asset.json";
 
@@ -13,30 +19,50 @@ export const Route = createFileRoute("/")({
   component: Home,
 });
 
-const SAMPLE_FOLDERS = [
-  { name: "House Collection", count: 532 },
-  { name: "Techno Crate 2026", count: 1284 },
-  { name: "Vinyl Rips", count: 217 },
-];
-
 function Home() {
   const navigate = useNavigate();
   const setLibrary = useLibraryStore((s) => s.setLibrary);
-  const lastLibrary = useLibraryStore((s) => s.lastLibrary);
+  const lastMeta = useLibraryStore((s) => s.lastLibraryMeta);
+  const hydrated = useLibraryStore((s) => s.hydrated);
+  const hydrate = useLibraryStore((s) => s.hydrate);
   const restoreLast = useLibraryStore((s) => s.restoreLast);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [progress, setProgress] = useState<ImportProgress | null>(null);
 
-  function importFolder() {
-    const sample = SAMPLE_FOLDERS[Math.floor(Math.random() * SAMPLE_FOLDERS.length)];
-    setLibrary({
-      folderName: sample.name,
-      tracks: generateMockTracks(sample.count),
-      importedAt: Date.now(),
-    });
-    navigate({ to: "/workspace" });
+  useEffect(() => {
+    void hydrate();
+  }, [hydrate]);
+
+  function pickFolder() {
+    inputRef.current?.click();
   }
 
-  function openLast() {
-    if (restoreLast()) navigate({ to: "/workspace" });
+  async function handleFiles(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    e.target.value = "";
+    if (files.length === 0) return;
+    setProgress({ phase: "scan", scanned: 0, total: files.length });
+    try {
+      const lib = await buildLibraryFromFiles(files, (p) => setProgress(p));
+      if (lib.tracks.length === 0) {
+        setProgress(null);
+        alert("Aucun fichier audio compatible (mp3, wav, flac, aac) dans ce dossier.");
+        return;
+      }
+      await setLibrary(lib);
+      setProgress({ phase: "done", scanned: lib.tracks.length, total: lib.tracks.length });
+      setTimeout(() => {
+        setProgress(null);
+        navigate({ to: "/workspace" });
+      }, 500);
+    } catch (err) {
+      console.error(err);
+      setProgress(null);
+    }
+  }
+
+  async function openLast() {
+    if (await restoreLast()) navigate({ to: "/workspace" });
   }
 
   return (
@@ -55,8 +81,19 @@ function Home() {
       </div>
 
       <div className="w-full max-w-sm space-y-3">
+        <input
+          ref={inputRef}
+          type="file"
+          accept=".mp3,.wav,.flac,.aac,audio/*"
+          multiple
+          /* @ts-expect-error non-standard but widely supported attributes */
+          webkitdirectory=""
+          directory=""
+          onChange={handleFiles}
+          className="hidden"
+        />
         <button
-          onClick={importFolder}
+          onClick={pickFolder}
           className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl text-[15px] font-semibold text-[var(--primary-foreground)] transition-transform active:scale-[0.98]"
           style={{ background: "var(--gradient-primary)", boxShadow: "var(--shadow-glow)" }}
         >
@@ -65,13 +102,14 @@ function Home() {
         </button>
         <button
           onClick={openLast}
-          disabled={!lastLibrary}
+          disabled={!hydrated || !lastMeta}
           className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl border border-border bg-[var(--surface-elevated)] text-[15px] font-medium text-foreground transition-colors hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Clock className="h-5 w-5 text-muted-foreground" />
-          {lastLibrary ? `Ouvrir « ${lastLibrary.folderName} »` : "Ouvrir la dernière bibliothèque"}
+          {hydrated && lastMeta ? `Ouvrir « ${lastMeta.name} »` : "Ouvrir la dernière bibliothèque"}
         </button>
       </div>
+      <ImportProgressModal progress={progress} />
     </main>
   );
 }

@@ -14,16 +14,18 @@ type Tab = "library" | "analysis";
 
 function Workspace() {
   const library = useLibraryStore((s) => s.library);
-  const restoreLast = useLibraryStore((s) => s.restoreLast);
+  const hydrated = useLibraryStore((s) => s.hydrated);
+  const hydrate = useLibraryStore((s) => s.hydrate);
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("library");
 
   useEffect(() => {
-    if (!library) {
-      const ok = restoreLast();
-      if (!ok) navigate({ to: "/" });
-    }
-  }, [library, restoreLast, navigate]);
+    void hydrate();
+  }, [hydrate]);
+
+  useEffect(() => {
+    if (hydrated && !library) navigate({ to: "/" });
+  }, [hydrated, library, navigate]);
 
   if (!library) return null;
 

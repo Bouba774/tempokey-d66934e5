@@ -1,6 +1,6 @@
 import { useRef, useState, useMemo } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { Search, SlidersHorizontal, Check } from "lucide-react";
+import { Search, SlidersHorizontal, Check, Music2 } from "lucide-react";
 import { useLibraryStore, type Track } from "@/lib/library-store";
 
 function TrackRow({ track, selected, onToggle }: { track: Track; selected: boolean; onToggle: () => void }) {
@@ -14,22 +14,22 @@ function TrackRow({ track, selected, onToggle }: { track: Track; selected: boole
       }`}
     >
       <div
-        className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg text-xs font-semibold tabular-nums ${
+        className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg text-[10px] font-semibold uppercase tabular-nums ${
           selected
             ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
             : "bg-[var(--surface-elevated)] text-[var(--primary-glow)]"
         }`}
       >
-        {selected ? <Check className="h-4 w-4" /> : track.key}
+        {selected ? <Check className="h-4 w-4" /> : track.extension ? track.extension : <Music2 className="h-4 w-4" />}
       </div>
       <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-medium text-foreground">{track.name}</div>
+        <div className="truncate text-sm font-medium text-foreground">{track.title}</div>
         <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground tabular-nums">
-          <span>{track.bpm} BPM</span>
+          <span>{track.bpm ?? "—"} BPM</span>
           <span className="text-border">·</span>
-          <span>{track.key}</span>
+          <span>{track.key ?? "—"}</span>
           <span className="text-border">·</span>
-          <span>{track.duration}</span>
+          <span>{track.duration ?? "—"}</span>
         </div>
       </div>
     </button>
@@ -49,7 +49,11 @@ export function TrackList() {
     if (!query.trim()) return tracks;
     const q = query.toLowerCase();
     return tracks.filter(
-      (t) => t.name.toLowerCase().includes(q) || t.key.toLowerCase() === q || String(t.bpm) === q,
+      (t) =>
+        t.title.toLowerCase().includes(q) ||
+        t.fileName.toLowerCase().includes(q) ||
+        (t.key ?? "").toLowerCase() === q ||
+        String(t.bpm ?? "") === q,
     );
   }, [tracks, query]);
 

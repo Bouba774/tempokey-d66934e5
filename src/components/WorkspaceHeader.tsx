@@ -16,7 +16,7 @@ export function WorkspaceHeader() {
             <>
               <div className="flex items-center gap-1.5 text-[15px] font-semibold text-foreground truncate">
                 <FolderOpen className="h-4 w-4 text-[var(--primary-glow)] shrink-0" />
-                <span className="truncate">{library.folderName}</span>
+                <span className="truncate">{library.name}</span>
               </div>
               <div className="text-xs text-muted-foreground tabular-nums">
                 {library.tracks.length.toLocaleString()} morceaux

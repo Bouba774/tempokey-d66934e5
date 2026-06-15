@@ -55,9 +55,9 @@ export function AnalysisPanel() {
             <li key={t.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
               <span className="h-1.5 w-1.5 rounded-full bg-[var(--primary-glow)]" />
               <span className="flex-1 truncate text-muted-foreground">
-                Analyse terminée : <span className="text-foreground">{t.name}</span>
+                Analyse terminée : <span className="text-foreground">{t.title}</span>
               </span>
-              <span className="text-xs tabular-nums text-muted-foreground">{t.bpm} · {t.key}</span>
+              <span className="text-xs tabular-nums text-muted-foreground">{t.bpm ?? "—"} · {t.key ?? "—"}</span>
             </li>
           ))}
         </ul>
