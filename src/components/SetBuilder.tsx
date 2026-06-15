@@ -9,7 +9,8 @@ import {
   SET_PRESETS,
   type SetType,
 } from "@/lib/setbuilder";
-import { energyLevel } from "@/lib/harmonic";
+import { EnergyMeter } from "./viz/EnergyMeter";
+import { CamelotBadge } from "./viz/CamelotBadge";
 import {
   ListOrdered,
   Sunrise,
