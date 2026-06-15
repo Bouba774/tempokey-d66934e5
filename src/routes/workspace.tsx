@@ -6,13 +6,14 @@ import { WorkspaceHeader } from "@/components/WorkspaceHeader";
 import { TrackList } from "@/components/TrackList";
 import { AnalysisPanel } from "@/components/AnalysisPanel";
 import { RenamePanel } from "@/components/RenamePanel";
+import { DuplicatesPanel } from "@/components/DuplicatesPanel";
 
 export const Route = createFileRoute("/workspace")({
   head: () => ({ meta: [{ title: "Workspace — TempoKey" }] }),
   component: Workspace,
 });
 
-type Tab = "library" | "analysis" | "rename";
+type Tab = "library" | "analysis" | "duplicates" | "rename";
 
 function Workspace() {
   const library = useLibraryStore((s) => s.library);
@@ -46,10 +47,11 @@ function Workspace() {
   return (
     <div className="flex min-h-[100dvh] flex-col bg-background">
       <WorkspaceHeader />
-      <div role="tablist" className="sticky top-[65px] z-20 flex gap-1 border-b border-border bg-background px-4">
+      <div role="tablist" className="sticky top-[65px] z-20 flex gap-1 overflow-x-auto border-b border-border bg-background px-4">
         {([
           { id: "library", label: "Bibliothèque" },
           { id: "analysis", label: "Analyse" },
+          { id: "duplicates", label: "Doublons" },
           { id: "rename", label: "Renommer" },
         ] as { id: Tab; label: string }[]).map((t) => {
           const active = tab === t.id;
@@ -59,7 +61,7 @@ function Workspace() {
               role="tab"
               aria-selected={active}
               onClick={() => setTab(t.id)}
-              className={`relative px-4 py-3 text-sm font-medium transition-colors ${
+              className={`relative px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors ${
                 active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -74,6 +76,7 @@ function Workspace() {
       <div className="flex flex-1 flex-col min-h-0">
         {tab === "library" && <TrackList />}
         {tab === "analysis" && <AnalysisPanel />}
+        {tab === "duplicates" && <DuplicatesPanel />}
         {tab === "rename" && <RenamePanel />}
       </div>
     </div>

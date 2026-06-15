@@ -50,6 +50,7 @@ interface LibraryState {
   toggleSelected: (id: string) => void;
   clearSelection: () => void;
   updateTrack: (id: string, patch: Partial<Track>) => void;
+  removeTracks: (ids: string[]) => Promise<void>;
   flush: () => Promise<void>;
   // Transient (not persisted): file handles for the current import session.
   setFiles: (entries: Array<{ trackId: string; file: File }>) => void;
@@ -206,6 +207,22 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     set({ selectedIds: next });
   },
   clearSelection: () => set({ selectedIds: new Set() }),
+
+  removeTracks: async (ids) => {
+    const lib = get().library;
+    if (!lib || ids.length === 0) return;
+    const set_ = new Set(ids);
+    const tracks = lib.tracks.filter((t) => !set_.has(t.id));
+    for (const id of ids) fileMap.delete(id);
+    const nextLib: Library = { ...lib, tracks };
+    const nextSel = new Set(get().selectedIds);
+    for (const id of ids) nextSel.delete(id);
+    set({ library: nextLib, selectedIds: nextSel, fileMapVersion: get().fileMapVersion + 1 });
+    try {
+      await idbSet(IDB_LIBRARY_KEY, nextLib);
+      localStorage.setItem(META_KEY, JSON.stringify(metaOf(nextLib)));
+    } catch {}
+  },
 
   updateTrack: (id, patch) => {
     const lib = get().library;
