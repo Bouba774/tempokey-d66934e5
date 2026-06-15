@@ -142,11 +142,13 @@ export async function undoOperation(opId: string, onProgress?: (p: ApplyProgress
     const reverseItem: RenamePreviewItem = {
       trackId: c.trackId,
       oldName: c.newName,
+      cleanedName: c.newName,
       newName: c.oldName,
       oldPath: c.newPath,
       newPath: c.oldPath,
       unchanged: false,
       conflict: false,
+      duplicate: false,
     };
     onProgress?.({ done, total: op.changes.length, current: c.newName });
     const resolved = await resolveFileHandle(root, c.newPath);
