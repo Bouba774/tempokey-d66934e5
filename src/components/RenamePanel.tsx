@@ -10,6 +10,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useLibraryStore } from "@/lib/library-store";
+import { useOrderedTracks, useOrderingStore } from "@/lib/ordering-store";
 import { buildPreview, TEMPLATES, type TemplateId, type RenamePreviewItem } from "@/lib/rename/templates";
 import {
   ensurePermission,
@@ -28,7 +29,8 @@ const PREVIEW_LIMIT = 200;
 export function RenamePanel() {
   const library = useLibraryStore((s) => s.library);
   const selectedIds = useLibraryStore((s) => s.selectedIds);
-  const tracks = library?.tracks ?? [];
+  const tracks = useOrderedTracks();
+  const activeOrder = useOrderingStore((s) => s.active);
 
   const [step, setStep] = useState<Step>("select");
   const [template, setTemplate] = useState<TemplateId>("dj-order");
@@ -160,6 +162,16 @@ export function RenamePanel() {
   return (
     <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
       <Stepper step={step} />
+      <div className="flex items-center gap-2 rounded-lg border border-border bg-[var(--surface-elevated)] px-3 py-2 text-xs">
+        <span className="text-muted-foreground">Ordre actif</span>
+        <span className="font-semibold text-[var(--primary-glow)]">
+          {activeOrder?.label ?? "Ordre d'import"}
+        </span>
+        <span className="ml-auto text-muted-foreground tabular-nums">
+          {scope === "selection" ? selectedIds.size : tracks.length} morceau
+          {(scope === "selection" ? selectedIds.size : tracks.length) > 1 ? "x" : ""}
+        </span>
+      </div>
       {error && (
         <div className="rounded-lg border border-[var(--destructive,#ef4444)]/40 bg-[var(--destructive,#ef4444)]/10 px-3 py-2 text-sm text-foreground">
           {error}
@@ -291,8 +303,8 @@ export function RenamePanel() {
             ) : (
               <>
                 <ul className="divide-y divide-border rounded-lg border border-border bg-card">
-                  {preview.items.slice(0, PREVIEW_LIMIT).map((it) => (
-                    <PreviewRow key={it.trackId} item={it} />
+                  {preview.items.slice(0, PREVIEW_LIMIT).map((it, i) => (
+                    <PreviewRow key={it.trackId} item={it} position={i + 1} />
                   ))}
                 </ul>
                 {preview.items.length > PREVIEW_LIMIT && (
@@ -483,18 +495,23 @@ function ScopeOption({
   );
 }
 
-function PreviewRow({ item }: { item: RenamePreviewItem }) {
+function PreviewRow({ item, position }: { item: RenamePreviewItem; position: number }) {
   return (
-    <li className="px-3 py-2 text-xs">
-      <div className="truncate text-muted-foreground" title={item.oldName}>
-        {item.oldName}
-      </div>
-      <div
-        className={`truncate tabular-nums ${item.unchanged ? "text-muted-foreground" : "text-foreground font-medium"}`}
-        title={item.newName}
-      >
-        → {item.newName}
-        {item.unchanged && <span className="ml-2 text-[10px] uppercase text-muted-foreground">inchangé</span>}
+    <li className="flex gap-3 px-3 py-2 text-xs">
+      <span className="w-10 shrink-0 text-right font-semibold tabular-nums text-[var(--primary-glow)]">
+        {String(position).padStart(3, "0")}
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-muted-foreground" title={item.oldName}>
+          {item.oldName}
+        </div>
+        <div
+          className={`truncate tabular-nums ${item.unchanged ? "text-muted-foreground" : "text-foreground font-medium"}`}
+          title={item.newName}
+        >
+          → {item.newName}
+          {item.unchanged && <span className="ml-2 text-[10px] uppercase text-muted-foreground">inchangé</span>}
+        </div>
       </div>
     </li>
   );

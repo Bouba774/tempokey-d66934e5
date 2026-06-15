@@ -57,17 +57,13 @@ interface OrderingResult {
   orderById: Map<string, number>;
 }
 
-/** Determine display order for a template. dj-order sorts by BPM asc, then title. */
-function orderTracks(template: TemplateId, tracks: Track[]): OrderingResult {
+/**
+ * Determine display order. We *always* preserve the caller's input order so
+ * the renaming respects the global active order chosen elsewhere in the app
+ * (Auto Mix Order, Harmonic Mixing, Set Builder, manual reorder, etc.).
+ */
+function orderTracks(_template: TemplateId, tracks: Track[]): OrderingResult {
   const ordered = tracks.slice();
-  if (template === "dj-order") {
-    ordered.sort((a, b) => {
-      const ba = a.bpm ?? Number.POSITIVE_INFINITY;
-      const bb = b.bpm ?? Number.POSITIVE_INFINITY;
-      if (ba !== bb) return ba - bb;
-      return a.title.localeCompare(b.title);
-    });
-  }
   const orderById = new Map<string, number>();
   ordered.forEach((t, i) => orderById.set(t.id, i + 1));
   return { ordered, orderById };
@@ -146,8 +142,10 @@ export function buildPreview(
   const usedPerDir = new Map<string, Set<string>>();
   const items: RenamePreviewItem[] = [];
 
-  // Iterate in the order requested by template so {ORDER} is stable.
-  const seq = template === "dj-order" ? ordered : tracks;
+  // Iterate in the order supplied by the caller (= active library order).
+  const seq = ordered;
+
+
 
   for (const t of seq) {
     const order = orderById.get(t.id) ?? 1;

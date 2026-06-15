@@ -1,77 +1,135 @@
 import { useRef, useState, useMemo } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { Search, SlidersHorizontal, Check, Music2, Loader2, AlertTriangle } from "lucide-react";
+import {
+  Search,
+  SlidersHorizontal,
+  Check,
+  Music2,
+  Loader2,
+  AlertTriangle,
+  ArrowUp,
+  ArrowDown,
+  GripVertical,
+} from "lucide-react";
 import { useLibraryStore, type Track } from "@/lib/library-store";
+import { useOrderingStore, useOrderedTracks } from "@/lib/ordering-store";
 import { FilterSheet } from "./FilterSheet";
 import {
   DEFAULT_FILTERS,
   type LibraryFilters,
-  type SortKey,
-  applyFiltersAndSort,
+  applyFiltersOnly,
   filtersActiveCount,
 } from "@/lib/library-filters";
 
-function TrackRow({ track, selected, onToggle }: { track: Track; selected: boolean; onToggle: () => void }) {
+function TrackRow({
+  track,
+  index,
+  selected,
+  onToggle,
+  reorderMode,
+  onMoveUp,
+  onMoveDown,
+  canMoveUp,
+  canMoveDown,
+}: {
+  track: Track;
+  index: number;
+  selected: boolean;
+  onToggle: () => void;
+  reorderMode: boolean;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
+}) {
   return (
-    <button
-      onClick={onToggle}
+    <div
       className={`group flex w-full items-center gap-3 rounded-xl border px-3 py-3 text-left transition-colors ${
         selected
           ? "border-[var(--primary)] bg-[var(--primary)]/10"
           : "border-border bg-card hover:bg-accent"
       }`}
     >
-      <div
-        className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg text-[10px] font-semibold uppercase tabular-nums ${
-          selected
-            ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
-            : "bg-[var(--surface-elevated)] text-[var(--primary-glow)]"
-        }`}
+      <button
+        onClick={onToggle}
+        className="flex min-w-0 flex-1 items-center gap-3 text-left"
       >
-        {selected ? (
-          <Check className="h-4 w-4" />
-        ) : track.status === "analyzing" ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : track.status === "error" ? (
-          <AlertTriangle className="h-4 w-4 text-[var(--destructive,#ef4444)]" />
-        ) : track.extension ? (
-          track.extension
-        ) : (
-          <Music2 className="h-4 w-4" />
-        )}
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-medium text-foreground">{track.title}</div>
-        <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground tabular-nums">
-          <span>{track.bpm ?? "—"} BPM</span>
-          <span className="text-border">·</span>
-          <span>{track.camelot ?? "—"}</span>
-          <span className="text-border">·</span>
-          <span>{track.duration ?? "—"}</span>
+        <div
+          className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg text-[10px] font-semibold uppercase tabular-nums ${
+            selected
+              ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
+              : "bg-[var(--surface-elevated)] text-[var(--primary-glow)]"
+          }`}
+        >
+          {selected ? (
+            <Check className="h-4 w-4" />
+          ) : reorderMode ? (
+            <span className="tabular-nums">{index + 1}</span>
+          ) : track.status === "analyzing" ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : track.status === "error" ? (
+            <AlertTriangle className="h-4 w-4 text-[var(--destructive,#ef4444)]" />
+          ) : track.extension ? (
+            track.extension
+          ) : (
+            <Music2 className="h-4 w-4" />
+          )}
         </div>
-      </div>
-    </button>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-sm font-medium text-foreground">{track.title}</div>
+          <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground tabular-nums">
+            <span>{track.bpm ?? "—"} BPM</span>
+            <span className="text-border">·</span>
+            <span>{track.camelot ?? "—"}</span>
+            <span className="text-border">·</span>
+            <span>{track.duration ?? "—"}</span>
+          </div>
+        </div>
+      </button>
+      {reorderMode && (
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            aria-label="Monter"
+            onClick={onMoveUp}
+            disabled={!canMoveUp}
+            className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground hover:bg-[var(--surface-elevated)] hover:text-foreground disabled:opacity-30"
+          >
+            <ArrowUp className="h-4 w-4" />
+          </button>
+          <button
+            aria-label="Descendre"
+            onClick={onMoveDown}
+            disabled={!canMoveDown}
+            className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground hover:bg-[var(--surface-elevated)] hover:text-foreground disabled:opacity-30"
+          >
+            <ArrowDown className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
 export function TrackList() {
-  const library = useLibraryStore((s) => s.library);
   const selectedIds = useLibraryStore((s) => s.selectedIds);
   const toggle = useLibraryStore((s) => s.toggleSelected);
   const clear = useLibraryStore((s) => s.clearSelection);
+  const ordered = useOrderedTracks();
+  const active = useOrderingStore((s) => s.active);
+  const setManual = useOrderingStore((s) => s.setManual);
+
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState<LibraryFilters>(DEFAULT_FILTERS);
-  const [sort, setSort] = useState<SortKey>("import");
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [reorderMode, setReorderMode] = useState(false);
   const parentRef = useRef<HTMLDivElement>(null);
 
-  const tracks = library?.tracks ?? [];
   const filtered = useMemo(
-    () => applyFiltersAndSort(tracks, query, filters, sort),
-    [tracks, query, filters, sort],
+    () => applyFiltersOnly(ordered, query, filters),
+    [ordered, query, filters],
   );
 
-  const activeCount = filtersActiveCount(filters) + (sort !== "import" ? 1 : 0);
+  const activeCount = filtersActiveCount(filters);
 
   const virtualizer = useVirtualizer({
     count: filtered.length,
@@ -79,6 +137,15 @@ export function TrackList() {
     estimateSize: () => 72,
     overscan: 10,
   });
+
+  function moveBy(trackId: string, delta: number) {
+    const ids = ordered.map((t) => t.id);
+    const i = ids.indexOf(trackId);
+    const j = i + delta;
+    if (i < 0 || j < 0 || j >= ids.length) return;
+    [ids[i], ids[j]] = [ids[j], ids[i]];
+    setManual(ids);
+  }
 
   return (
     <div className="flex flex-1 flex-col min-h-0">
@@ -93,6 +160,17 @@ export function TrackList() {
           />
         </div>
         <button
+          aria-label={reorderMode ? "Quitter le mode manuel" : "Réorganiser"}
+          onClick={() => setReorderMode((v) => !v)}
+          className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl border transition-colors ${
+            reorderMode
+              ? "border-[var(--primary)] bg-[var(--primary)]/15 text-[var(--primary-glow)]"
+              : "border-border bg-[var(--surface-elevated)] text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+        <button
           aria-label="Filtres"
           onClick={() => setSheetOpen(true)}
           className="relative grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-border bg-[var(--surface-elevated)] text-muted-foreground hover:text-foreground"
@@ -106,8 +184,13 @@ export function TrackList() {
         </button>
       </div>
 
-      <div className="px-4 pb-1 text-xs text-muted-foreground tabular-nums">
-        {filtered.length.toLocaleString()} / {tracks.length.toLocaleString()} morceaux
+      <div className="flex items-center justify-between gap-2 px-4 pb-1 text-xs text-muted-foreground tabular-nums">
+        <span>
+          {filtered.length.toLocaleString()} / {ordered.length.toLocaleString()} morceaux
+        </span>
+        <span className="truncate text-[var(--primary-glow)]">
+          Ordre actif : {active?.label ?? "Ordre d'import"}
+        </span>
       </div>
 
       {selectedIds.size > 0 && (
@@ -121,6 +204,7 @@ export function TrackList() {
         <div style={{ height: virtualizer.getTotalSize(), width: "100%", position: "relative" }}>
           {virtualizer.getVirtualItems().map((vi) => {
             const track = filtered[vi.index];
+            const orderedIndex = ordered.indexOf(track);
             return (
               <div
                 key={track.id}
@@ -135,8 +219,14 @@ export function TrackList() {
               >
                 <TrackRow
                   track={track}
+                  index={orderedIndex}
                   selected={selectedIds.has(track.id)}
                   onToggle={() => toggle(track.id)}
+                  reorderMode={reorderMode}
+                  onMoveUp={() => moveBy(track.id, -1)}
+                  onMoveDown={() => moveBy(track.id, 1)}
+                  canMoveUp={orderedIndex > 0}
+                  canMoveDown={orderedIndex < ordered.length - 1}
                 />
               </div>
             );
@@ -154,8 +244,6 @@ export function TrackList() {
         onClose={() => setSheetOpen(false)}
         filters={filters}
         onChange={setFilters}
-        sort={sort}
-        onSortChange={setSort}
       />
     </div>
   );

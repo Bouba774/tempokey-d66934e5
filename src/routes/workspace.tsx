@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useLibraryStore } from "@/lib/library-store";
 import { useAnalysisStore } from "@/lib/analysis-store";
+import { useOrderingStore } from "@/lib/ordering-store";
 import { WorkspaceHeader } from "@/components/WorkspaceHeader";
 import { TrackList } from "@/components/TrackList";
 import { AnalysisPanel } from "@/components/AnalysisPanel";
@@ -28,6 +29,12 @@ function Workspace() {
   useEffect(() => {
     void hydrate();
   }, [hydrate]);
+
+  // Hydrate ordering once a library is available.
+  const hydrateOrder = useOrderingStore((s) => s.hydrate);
+  useEffect(() => {
+    if (library) void hydrateOrder(library.id);
+  }, [library, hydrateOrder]);
 
   useEffect(() => {
     if (hydrated && !library) navigate({ to: "/" });

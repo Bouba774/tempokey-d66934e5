@@ -1,5 +1,7 @@
 import { useMemo, useState, useRef } from "react";
+import { toast } from "sonner";
 import { useLibraryStore, type Track } from "@/lib/library-store";
+import { useOrderingStore, type OrderSource } from "@/lib/ordering-store";
 import {
   buildSet,
   SET_PRESETS,
@@ -40,6 +42,7 @@ function energyDot(t: Track) {
 export function SetBuilder() {
   const library = useLibraryStore((s) => s.library);
   const tracks = library?.tracks ?? [];
+  const setOrder = useOrderingStore((s) => s.setOrder);
   const analyzedCount = tracks.filter(
     (t) => t.analyzed && t.bpm && t.camelot,
   ).length;
@@ -48,6 +51,23 @@ export function SetBuilder() {
   const [setTracks, setSetTracks] = useState<Track[]>([]);
   const [validated, setValidated] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+
+  function promoteToActive() {
+    if (!activeType || setTracks.length === 0) return;
+    const src: OrderSource =
+      activeType === "auto"
+        ? "auto-mix"
+        : activeType === "warmup"
+          ? "setbuilder-warmup"
+          : activeType === "peak"
+            ? "setbuilder-peak"
+            : "setbuilder-closing";
+    const label = SET_PRESETS[activeType].label;
+    setOrder(src, { ids: setTracks.map((t) => t.id), label });
+    toast.success(`Ordre actif : ${label}`, {
+      description: `${setTracks.length} morceaux appliqués à la bibliothèque.`,
+    });
+  }
 
   const generate = (type: SetType) => {
     const result = buildSet(type, tracks);
@@ -252,7 +272,7 @@ export function SetBuilder() {
           )}
 
           {setTracks.length > 0 && (
-            <div className="flex items-center justify-end gap-2 border-t border-border px-3 py-2">
+            <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border px-3 py-2">
               <button
                 onClick={() => {
                   setActiveType(null);
@@ -265,10 +285,16 @@ export function SetBuilder() {
               </button>
               <button
                 onClick={() => setValidated(true)}
+                className="rounded-lg border border-border bg-[var(--surface-elevated)] px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent"
+              >
+                Valider le set
+              </button>
+              <button
+                onClick={promoteToActive}
                 className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[var(--primary-foreground)]"
                 style={{ background: "var(--gradient-primary)" }}
               >
-                Valider le set
+                Utiliser comme ordre principal
               </button>
             </div>
           )}

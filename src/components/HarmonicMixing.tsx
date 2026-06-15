@@ -1,5 +1,7 @@
 import { useMemo } from "react";
+import { toast } from "sonner";
 import { useLibraryStore, type Track } from "@/lib/library-store";
+import { useOrderingStore, type OrderSource } from "@/lib/ordering-store";
 import {
   energyLabel,
   energyLevel,
@@ -7,7 +9,7 @@ import {
   getSuggestions,
   type Suggestion,
 } from "@/lib/harmonic";
-import { Disc3, Sparkles, Waves, Flame, ArrowRight, X } from "lucide-react";
+import { Disc3, Sparkles, Waves, Flame, ArrowRight, X, CheckCheck } from "lucide-react";
 
 function EnergyPill({ track }: { track: Pick<Track, "bpm" | "camelot"> }) {
   const level = energyLevel(track);
@@ -60,6 +62,7 @@ function Section({
   items,
   source,
   empty,
+  onApply,
 }: {
   icon: React.ReactNode;
   title: string;
@@ -67,15 +70,26 @@ function Section({
   items: Suggestion[];
   source: Track;
   empty: string;
+  onApply?: () => void;
 }) {
   return (
     <div className="rounded-xl border border-border bg-card">
-      <div className="flex items-center justify-between border-b border-border px-4 py-3">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
+        <div className="flex items-center gap-2 min-w-0">
           <span className="text-[var(--primary-glow)]">{icon}</span>
-          <span className="text-sm font-medium">{title}</span>
+          <span className="truncate text-sm font-medium">{title}</span>
         </div>
-        {hint && <span className="text-[11px] text-muted-foreground">{hint}</span>}
+        <div className="flex shrink-0 items-center gap-2">
+          {hint && <span className="hidden sm:inline text-[11px] text-muted-foreground">{hint}</span>}
+          {onApply && items.length > 0 && (
+            <button
+              onClick={onApply}
+              className="inline-flex items-center gap-1 rounded-md border border-[var(--primary)]/40 bg-[var(--primary)]/10 px-2 py-1 text-[11px] font-semibold text-[var(--primary-glow)] hover:bg-[var(--primary)]/20"
+            >
+              <CheckCheck className="h-3 w-3" /> Appliquer
+            </button>
+          )}
+        </div>
       </div>
       {items.length === 0 ? (
         <div className="px-4 py-5 text-center text-xs text-muted-foreground">{empty}</div>
@@ -94,6 +108,20 @@ export function HarmonicMixing() {
   const library = useLibraryStore((s) => s.library);
   const selectedIds = useLibraryStore((s) => s.selectedIds);
   const clear = useLibraryStore((s) => s.clearSelection);
+  const setOrder = useOrderingStore((s) => s.setOrder);
+
+  function applySuggestionList(
+    src: OrderSource,
+    label: string,
+    items: Suggestion[],
+    sourceTrack: Track,
+  ) {
+    const ids = [sourceTrack.id, ...items.map((s) => s.track.id)];
+    setOrder(src, { ids, label });
+    toast.success(`Ordre actif : ${label}`, {
+      description: `${ids.length} morceaux en tête de bibliothèque.`,
+    });
+  }
 
   const source = useMemo<Track | null>(() => {
     if (!library) return null;
@@ -168,6 +196,7 @@ export function HarmonicMixing() {
             items={suggestions.next}
             source={source}
             empty="Pas assez de morceaux analysés pour une recommandation."
+            onApply={() => applySuggestionList("harmonic-progressive", "Progressive Mix", suggestions.next, source)}
           />
           <Section
             icon={<Sparkles className="h-4 w-4" />}
@@ -176,6 +205,7 @@ export function HarmonicMixing() {
             items={suggestions.compatible}
             source={source}
             empty="Aucun morceau compatible trouvé."
+            onApply={() => applySuggestionList("harmonic-smooth", "Compatible Tracks", suggestions.compatible, source)}
           />
           <Section
             icon={<Waves className="h-4 w-4" />}
@@ -184,6 +214,7 @@ export function HarmonicMixing() {
             items={suggestions.smooth}
             source={source}
             empty="Aucune transition douce disponible."
+            onApply={() => applySuggestionList("harmonic-smooth", "Smooth Transition", suggestions.smooth, source)}
           />
           <Section
             icon={<Flame className="h-4 w-4" />}
@@ -192,6 +223,7 @@ export function HarmonicMixing() {
             items={suggestions.energetic}
             source={source}
             empty="Aucune montée d'énergie pertinente."
+            onApply={() => applySuggestionList("harmonic-energy", "Energy Build", suggestions.energetic, source)}
           />
         </>
       )}
