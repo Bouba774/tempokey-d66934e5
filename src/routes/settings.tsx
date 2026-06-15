@@ -586,5 +586,4 @@ function ToggleRow({
   );
 }
 
-// Suppress unused-import lints in case helpers are not used in every build.
-void ThemeMode;
+
