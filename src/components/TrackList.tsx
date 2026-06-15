@@ -223,6 +223,13 @@ export function TrackList() {
     [ordered, query, filters],
   );
 
+  // When the user has selected a single track, compare every row to it.
+  const compareTo = useMemo<Track | null>(() => {
+    if (selectedIds.size !== 1) return null;
+    const id = selectedIds.values().next().value as string | undefined;
+    return id ? ordered.find((t) => t.id === id) ?? null : null;
+  }, [selectedIds, ordered]);
+
   const activeCount = filtersActiveCount(filters);
 
   const virtualizer = useVirtualizer({
