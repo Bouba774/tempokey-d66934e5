@@ -10,6 +10,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { FloatingPlayer } from "@/components/FloatingPlayer";
+import { useThemeStore } from "@/lib/theme-store";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -113,6 +114,11 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var m=localStorage.getItem('tempokey:theme')||'dark';var r=m==='system'?(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):m;var c=document.documentElement.classList;c.toggle('dark',r==='dark');c.toggle('light',r==='light');document.documentElement.style.colorScheme=r;}catch(e){document.documentElement.classList.add('dark');}})();`,
+          }}
+        />
       </head>
       <body>
         {children}
@@ -124,13 +130,19 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const hydrateTheme = useThemeStore((s) => s.hydrate);
+  const resolved = useThemeStore((s) => s.resolved);
+
+  useEffect(() => {
+    hydrateTheme();
+  }, [hydrateTheme]);
 
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
       <FloatingPlayer />
-      <Toaster position="top-center" richColors closeButton theme="dark" />
+      <Toaster position="top-center" richColors closeButton theme={resolved} />
     </QueryClientProvider>
   );
 }
