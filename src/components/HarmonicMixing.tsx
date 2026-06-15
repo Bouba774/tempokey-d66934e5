@@ -3,9 +3,6 @@ import { toast } from "sonner";
 import { useLibraryStore, type Track } from "@/lib/library-store";
 import { useOrderingStore, type OrderSource } from "@/lib/ordering-store";
 import {
-  energyLabel,
-  energyLevel,
-  energyScore,
   getSuggestions,
   type Suggestion,
 } from "@/lib/harmonic";
