@@ -1,105 +1,180 @@
 import { create } from "zustand";
+import { get as idbGet, set as idbSet, del as idbDel } from "idb-keyval";
+
+export const AUDIO_EXTENSIONS = ["mp3", "wav", "flac", "aac"] as const;
+export type AudioExtension = (typeof AUDIO_EXTENSIONS)[number];
 
 export interface Track {
   id: string;
-  name: string;
-  bpm: number;
-  key: string;
-  duration: string;
+  title: string;
+  fileName: string;
+  filePath: string;
+  extension: string;
+  size: number | null;
+  bpm: number | null;
+  key: string | null;
+  duration: string | null;
   analyzed: boolean;
 }
 
 export interface Library {
-  folderName: string;
+  id: string;
+  name: string;
+  createdAt: number;
   tracks: Track[];
-  importedAt: number;
+}
+
+interface LibraryMeta {
+  id: string;
+  name: string;
+  createdAt: number;
+  trackCount: number;
 }
 
 interface LibraryState {
   library: Library | null;
-  lastLibrary: Library | null;
+  lastLibraryMeta: LibraryMeta | null;
+  hydrated: boolean;
   selectedIds: Set<string>;
-  setLibrary: (lib: Library) => void;
-  restoreLast: () => boolean;
+  setLibrary: (lib: Library) => Promise<void>;
+  hydrate: () => Promise<void>;
+  restoreLast: () => Promise<boolean>;
+  clearLibrary: () => Promise<void>;
   toggleSelected: (id: string) => void;
   clearSelection: () => void;
 }
 
-const CAMELOT_KEYS = [
-  "1A","1B","2A","2B","3A","3B","4A","4B","5A","5B","6A","6B",
-  "7A","7B","8A","8B","9A","9B","10A","10B","11A","11B","12A","12B",
-];
+const IDB_LIBRARY_KEY = "tempokey:active-library";
+const META_KEY = "tempokey:last-library-meta";
 
-const SAMPLE_NAMES = [
-  "Midnight Drive", "Neon Pulse", "Velvet Sky", "Echo Chamber", "Solar Flare",
-  "Deep Current", "Skyline", "Lost Frequencies", "Pulse Code", "Reverie",
-  "Afterglow", "Magnetic North", "Glass Horizon", "Saturn Returns", "Lunar Tide",
-  "Crystal Run", "Static Dreams", "Heatwave", "Parallel", "Soft Machine",
-  "Phantom Limb", "Cassette Memory", "Low Orbit", "Halcyon", "Wavelength",
-];
-
-function fmtDuration(sec: number) {
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60);
-  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+function isAudioFile(name: string): boolean {
+  const ext = name.split(".").pop()?.toLowerCase();
+  return !!ext && (AUDIO_EXTENSIONS as readonly string[]).includes(ext);
 }
 
-export function generateMockTracks(count: number): Track[] {
-  const tracks: Track[] = [];
-  for (let i = 0; i < count; i++) {
-    const base = SAMPLE_NAMES[i % SAMPLE_NAMES.length];
-    tracks.push({
-      id: `t-${i}`,
-      name: `${base} ${String(i + 1).padStart(3, "0")}`,
-      bpm: 90 + Math.floor((i * 37) % 60),
-      key: CAMELOT_KEYS[(i * 7) % CAMELOT_KEYS.length],
-      duration: fmtDuration(120 + ((i * 53) % 300)),
-      analyzed: i % 3 === 0,
-    });
+function stripExt(name: string): string {
+  const i = name.lastIndexOf(".");
+  return i > 0 ? name.slice(0, i) : name;
+}
+
+function getExt(name: string): string {
+  return name.split(".").pop()?.toLowerCase() ?? "";
+}
+
+export interface ImportProgress {
+  phase: "scan" | "build" | "done";
+  scanned: number;
+  total: number;
+}
+
+export async function buildLibraryFromFiles(
+  files: File[],
+  onProgress?: (p: ImportProgress) => void,
+): Promise<Library> {
+  const audio = files.filter((f) => isAudioFile(f.name));
+  const total = audio.length;
+  onProgress?.({ phase: "scan", scanned: 0, total });
+
+  const tracks: Track[] = new Array(total);
+  for (let i = 0; i < total; i++) {
+    const f = audio[i];
+    const path = (f as File & { webkitRelativePath?: string }).webkitRelativePath || f.name;
+    tracks[i] = {
+      id: `${i}-${path}`,
+      title: stripExt(f.name),
+      fileName: f.name,
+      filePath: path,
+      extension: getExt(f.name),
+      size: typeof f.size === "number" ? f.size : null,
+      bpm: null,
+      key: null,
+      duration: null,
+      analyzed: false,
+    };
+    if (i % 200 === 0) onProgress?.({ phase: "scan", scanned: i + 1, total });
   }
-  return tracks;
+  onProgress?.({ phase: "build", scanned: total, total });
+
+  // Derive folder name from common root segment of webkitRelativePath
+  const firstPath = tracks[0]?.filePath ?? "";
+  const folderName =
+    firstPath.includes("/") ? firstPath.split("/")[0] : "Dossier importé";
+
+  const lib: Library = {
+    id: `lib_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
+    name: folderName,
+    createdAt: Date.now(),
+    tracks,
+  };
+  onProgress?.({ phase: "done", scanned: total, total });
+  return lib;
 }
 
-const STORAGE_KEY = "tempokey:last-library";
+function metaOf(lib: Library): LibraryMeta {
+  return { id: lib.id, name: lib.name, createdAt: lib.createdAt, trackCount: lib.tracks.length };
+}
 
-function loadLast(): Library | null {
+function loadMetaSync(): LibraryMeta | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const meta = JSON.parse(raw) as { folderName: string; count: number; importedAt: number };
-    return {
-      folderName: meta.folderName,
-      tracks: generateMockTracks(meta.count),
-      importedAt: meta.importedAt,
-    };
+    const raw = localStorage.getItem(META_KEY);
+    return raw ? (JSON.parse(raw) as LibraryMeta) : null;
   } catch {
     return null;
   }
 }
 
-function persist(lib: Library) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify({ folderName: lib.folderName, count: lib.tracks.length, importedAt: lib.importedAt }),
-  );
-}
-
 export const useLibraryStore = create<LibraryState>((set, get) => ({
   library: null,
-  lastLibrary: typeof window !== "undefined" ? loadLast() : null,
+  lastLibraryMeta: null,
+  hydrated: false,
   selectedIds: new Set(),
-  setLibrary: (lib) => {
-    persist(lib);
-    set({ library: lib, lastLibrary: lib, selectedIds: new Set() });
+
+  setLibrary: async (lib) => {
+    const meta = metaOf(lib);
+    try {
+      await idbSet(IDB_LIBRARY_KEY, lib);
+      localStorage.setItem(META_KEY, JSON.stringify(meta));
+    } catch (e) {
+      console.error("[tempokey] persist failed", e);
+    }
+    set({ library: lib, lastLibraryMeta: meta, selectedIds: new Set() });
   },
-  restoreLast: () => {
-    const last = get().lastLibrary ?? loadLast();
-    if (!last) return false;
-    set({ library: last, lastLibrary: last, selectedIds: new Set() });
-    return true;
+
+  hydrate: async () => {
+    if (get().hydrated) return;
+    const meta = loadMetaSync();
+    try {
+      const lib = (await idbGet(IDB_LIBRARY_KEY)) as Library | undefined;
+      set({
+        library: lib ?? null,
+        lastLibraryMeta: meta ?? (lib ? metaOf(lib) : null),
+        hydrated: true,
+      });
+    } catch {
+      set({ lastLibraryMeta: meta, hydrated: true });
+    }
   },
+
+  restoreLast: async () => {
+    try {
+      const lib = (await idbGet(IDB_LIBRARY_KEY)) as Library | undefined;
+      if (!lib) return false;
+      set({ library: lib, lastLibraryMeta: metaOf(lib), selectedIds: new Set() });
+      return true;
+    } catch {
+      return false;
+    }
+  },
+
+  clearLibrary: async () => {
+    try {
+      await idbDel(IDB_LIBRARY_KEY);
+      localStorage.removeItem(META_KEY);
+    } catch {}
+    set({ library: null, lastLibraryMeta: null, selectedIds: new Set() });
+  },
+
   toggleSelected: (id) => {
     const next = new Set(get().selectedIds);
     if (next.has(id)) next.delete(id);
