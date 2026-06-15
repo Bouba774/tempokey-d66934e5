@@ -66,8 +66,8 @@ export function RenamePanel() {
   }, [tracks, selectedIds, scope]);
 
   const preview = useMemo(
-    () => (step === "preview" ? buildPreview(template, customFormat, scopedTracks) : null),
-    [step, template, customFormat, scopedTracks],
+    () => (step === "preview" ? buildPreview(template, customFormat, scopedTracks, { cleanPrefixes }) : null),
+    [step, template, customFormat, scopedTracks, cleanPrefixes],
   );
 
   async function grantAccess() {
