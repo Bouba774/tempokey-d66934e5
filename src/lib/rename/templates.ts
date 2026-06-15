@@ -142,8 +142,10 @@ export function buildPreview(
   const usedPerDir = new Map<string, Set<string>>();
   const items: RenamePreviewItem[] = [];
 
-  // Iterate in the order requested by template so {ORDER} is stable.
-  const seq = template === "dj-order" ? ordered : tracks;
+  // Iterate in the order supplied by the caller (= active library order).
+  const seq = ordered;
+
+
 
   for (const t of seq) {
     const order = orderById.get(t.id) ?? 1;
