@@ -2,6 +2,14 @@ import { useRef, useState, useMemo } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Search, SlidersHorizontal, Check, Music2, Loader2, AlertTriangle } from "lucide-react";
 import { useLibraryStore, type Track } from "@/lib/library-store";
+import { FilterSheet } from "./FilterSheet";
+import {
+  DEFAULT_FILTERS,
+  type LibraryFilters,
+  type SortKey,
+  applyFiltersAndSort,
+  filtersActiveCount,
+} from "@/lib/library-filters";
 
 function TrackRow({ track, selected, onToggle }: { track: Track; selected: boolean; onToggle: () => void }) {
   return (
@@ -52,20 +60,18 @@ export function TrackList() {
   const toggle = useLibraryStore((s) => s.toggleSelected);
   const clear = useLibraryStore((s) => s.clearSelection);
   const [query, setQuery] = useState("");
+  const [filters, setFilters] = useState<LibraryFilters>(DEFAULT_FILTERS);
+  const [sort, setSort] = useState<SortKey>("import");
+  const [sheetOpen, setSheetOpen] = useState(false);
   const parentRef = useRef<HTMLDivElement>(null);
 
   const tracks = library?.tracks ?? [];
-  const filtered = useMemo(() => {
-    if (!query.trim()) return tracks;
-    const q = query.toLowerCase();
-    return tracks.filter(
-      (t) =>
-        t.title.toLowerCase().includes(q) ||
-        t.fileName.toLowerCase().includes(q) ||
-        (t.key ?? "").toLowerCase() === q ||
-        String(t.bpm ?? "") === q,
-    );
-  }, [tracks, query]);
+  const filtered = useMemo(
+    () => applyFiltersAndSort(tracks, query, filters, sort),
+    [tracks, query, filters, sort],
+  );
+
+  const activeCount = filtersActiveCount(filters) + (sort !== "import" ? 1 : 0);
 
   const virtualizer = useVirtualizer({
     count: filtered.length,
@@ -82,16 +88,26 @@ export function TrackList() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Rechercher un morceau, BPM, tonalité…"
+            placeholder="Recherche : titre, 124, 120-125, 8A…"
             className="h-11 w-full rounded-xl border border-border bg-[var(--surface-elevated)] pl-10 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--ring)]"
           />
         </div>
         <button
           aria-label="Filtres"
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-border bg-[var(--surface-elevated)] text-muted-foreground hover:text-foreground"
+          onClick={() => setSheetOpen(true)}
+          className="relative grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-border bg-[var(--surface-elevated)] text-muted-foreground hover:text-foreground"
         >
           <SlidersHorizontal className="h-4 w-4" />
+          {activeCount > 0 && (
+            <span className="absolute -top-1 -right-1 grid h-4 min-w-4 place-items-center rounded-full bg-[var(--primary)] px-1 text-[10px] font-semibold text-[var(--primary-foreground)]">
+              {activeCount}
+            </span>
+          )}
         </button>
+      </div>
+
+      <div className="px-4 pb-1 text-xs text-muted-foreground tabular-nums">
+        {filtered.length.toLocaleString()} / {tracks.length.toLocaleString()} morceaux
       </div>
 
       {selectedIds.size > 0 && (
@@ -132,6 +148,15 @@ export function TrackList() {
           </div>
         )}
       </div>
+
+      <FilterSheet
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        filters={filters}
+        onChange={setFilters}
+        sort={sort}
+        onSortChange={setSort}
+      />
     </div>
   );
 }
