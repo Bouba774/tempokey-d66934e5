@@ -4,7 +4,6 @@ import {
   Search,
   SlidersHorizontal,
   Check,
-  Music2,
   Loader2,
   AlertTriangle,
   ArrowUp,
@@ -12,11 +11,18 @@ import {
   GripVertical,
   Play,
   Pause,
+  Info,
+  Lock,
 } from "lucide-react";
 import { usePlayerStore } from "@/lib/audio/player-store";
 import { useLibraryStore, type Track } from "@/lib/library-store";
 import { useOrderingStore, useOrderedTracks } from "@/lib/ordering-store";
 import { FilterSheet } from "./FilterSheet";
+import { TrackDetailSheet } from "./TrackDetailSheet";
+import {
+  confidenceLabel,
+  confidenceTone,
+} from "@/lib/corrections";
 import {
   DEFAULT_FILTERS,
   type LibraryFilters,
@@ -29,6 +35,7 @@ function TrackRow({
   index,
   selected,
   onToggle,
+  onOpenDetails,
   reorderMode,
   onMoveUp,
   onMoveDown,
@@ -39,6 +46,7 @@ function TrackRow({
   index: number;
   selected: boolean;
   onToggle: () => void;
+  onOpenDetails: () => void;
   reorderMode: boolean;
   onMoveUp: () => void;
   onMoveDown: () => void;
@@ -49,6 +57,17 @@ function TrackRow({
   const isPlaying = usePlayerStore((s) => s.isPlaying && s.currentId === track.id);
   const play = usePlayerStore((s) => s.play);
   const toggle = usePlayerStore((s) => s.toggle);
+
+  // Overall row confidence = min of bpm/key, only when analyzed.
+  const conf =
+    track.analyzed && (track.bpmConfidence != null || track.keyConfidence != null)
+      ? Math.min(
+          track.bpmConfidence ?? 1,
+          track.keyConfidence ?? 1,
+        )
+      : null;
+  const tone = confidenceTone(confidenceLabel(conf));
+  const suspect = track.suspect === true;
 
   return (
     <div
@@ -108,21 +127,53 @@ function TrackRow({
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-medium text-foreground">
+          <div className="flex items-center gap-1.5 truncate text-sm font-medium text-foreground">
             {selected && !reorderMode && (
-              <Check className="mr-1 inline h-3.5 w-3.5 text-[var(--primary-glow)]" />
+              <Check className="inline h-3.5 w-3.5 shrink-0 text-[var(--primary-glow)]" />
             )}
-            {track.title}
+            {conf != null && (
+              <span
+                aria-label="Niveau de confiance"
+                title="Niveau de confiance"
+                className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${tone.text}`}
+                style={{ background: "currentColor" }}
+              />
+            )}
+            <span className="truncate">{track.title}</span>
+            {suspect && (
+              <AlertTriangle
+                aria-label="À vérifier"
+                className="h-3 w-3 shrink-0 text-amber-400"
+              />
+            )}
           </div>
           <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground tabular-nums">
-            <span>{track.bpm ?? "—"} BPM</span>
+            <span className="inline-flex items-center gap-0.5">
+              {track.bpm ?? "—"} BPM
+              {track.bpmLocked && <Lock className="h-2.5 w-2.5" />}
+            </span>
             <span className="text-border">·</span>
-            <span>{track.camelot ?? "—"}</span>
+            <span className="inline-flex items-center gap-0.5">
+              {track.camelot ?? "—"}
+              {track.keyLocked && <Lock className="h-2.5 w-2.5" />}
+            </span>
             <span className="text-border">·</span>
             <span>{track.duration ?? "—"}</span>
           </div>
         </div>
       </button>
+      {!reorderMode && (
+        <button
+          aria-label="Détails"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenDetails();
+          }}
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-muted-foreground hover:bg-[var(--surface-elevated)] hover:text-foreground"
+        >
+          <Info className="h-4 w-4" />
+        </button>
+      )}
       {reorderMode && (
         <div className="flex shrink-0 items-center gap-1">
           <button
@@ -159,6 +210,7 @@ export function TrackList() {
   const [filters, setFilters] = useState<LibraryFilters>(DEFAULT_FILTERS);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [reorderMode, setReorderMode] = useState(false);
+  const [detailId, setDetailId] = useState<string | null>(null);
   const parentRef = useRef<HTMLDivElement>(null);
 
   const filtered = useMemo(
@@ -259,6 +311,7 @@ export function TrackList() {
                   index={orderedIndex}
                   selected={selectedIds.has(track.id)}
                   onToggle={() => toggle(track.id)}
+                  onOpenDetails={() => setDetailId(track.id)}
                   reorderMode={reorderMode}
                   onMoveUp={() => moveBy(track.id, -1)}
                   onMoveDown={() => moveBy(track.id, 1)}
@@ -282,6 +335,7 @@ export function TrackList() {
         filters={filters}
         onChange={setFilters}
       />
+      <TrackDetailSheet trackId={detailId} onClose={() => setDetailId(null)} />
     </div>
   );
 }
