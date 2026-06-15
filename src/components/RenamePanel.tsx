@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useLibraryStore } from "@/lib/library-store";
 import { useOrderedTracks, useOrderingStore } from "@/lib/ordering-store";
-import { buildPreview, TEMPLATES, type TemplateId, type RenamePreviewItem } from "@/lib/rename/templates";
+import { buildPreview, TEMPLATES, TEMPLATE_VARIABLES, type TemplateId, type RenamePreviewItem } from "@/lib/rename/templates";
 import {
   ensurePermission,
   isFsAccessSupported,
@@ -35,6 +35,7 @@ export function RenamePanel() {
   const [step, setStep] = useState<Step>("select");
   const [template, setTemplate] = useState<TemplateId>("dj-order");
   const [customFormat, setCustomFormat] = useState("{ORDER} - {BPM} - {KEY} - {TITLE}");
+  const [cleanPrefixes, setCleanPrefixes] = useState(true);
   const [scope, setScope] = useState<"all" | "selection">(selectedIds.size > 0 ? "selection" : "all");
   const [hasHandle, setHasHandle] = useState(false);
   const [grantBusy, setGrantBusy] = useState(false);
@@ -65,8 +66,8 @@ export function RenamePanel() {
   }, [tracks, selectedIds, scope]);
 
   const preview = useMemo(
-    () => (step === "preview" ? buildPreview(template, customFormat, scopedTracks) : null),
-    [step, template, customFormat, scopedTracks],
+    () => (step === "preview" ? buildPreview(template, customFormat, scopedTracks, { cleanPrefixes }) : null),
+    [step, template, customFormat, scopedTracks, cleanPrefixes],
   );
 
   async function grantAccess() {
@@ -272,10 +273,28 @@ export function RenamePanel() {
                 placeholder="{ORDER} - {BPM} - {KEY} - {TITLE}"
               />
               <p className="mt-2 text-xs text-muted-foreground">
-                Variables : {"{ORDER}, {BPM}, {KEY}, {CAMELOT}, {TITLE}, {DURATION}"}
+                Variables : {TEMPLATE_VARIABLES.join(", ")}
               </p>
             </Section>
           )}
+
+          <Section title="Options">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={cleanPrefixes}
+                onChange={(e) => setCleanPrefixes(e.target.checked)}
+                className="mt-1 h-4 w-4 accent-[var(--primary)]"
+              />
+              <span className="text-sm">
+                <span className="font-medium text-foreground">Nettoyer les préfixes existants</span>
+                <span className="mt-0.5 block text-xs text-muted-foreground">
+                  Retire automatiquement numéros, BPM, Camelot et séparateurs avant le titre.
+                </span>
+              </span>
+            </label>
+          </Section>
+
 
           <div className="grid grid-cols-2 gap-2">
             <button
@@ -297,14 +316,14 @@ export function RenamePanel() {
 
       {step === "preview" && preview && (
         <div className="space-y-3">
-          <Section title={`Aperçu (${preview.changeCount.toLocaleString()} modifications)`}>
+          <Section title={`Aperçu (${preview.changeCount.toLocaleString()} modifications${preview.duplicateCount > 0 ? ` · ${preview.duplicateCount} conflit${preview.duplicateCount > 1 ? "s" : ""} auto-résolu${preview.duplicateCount > 1 ? "s" : ""}` : ""})`}>
             {preview.items.length === 0 ? (
               <p className="text-sm text-muted-foreground">Aucun morceau à renommer.</p>
             ) : (
               <>
                 <ul className="divide-y divide-border rounded-lg border border-border bg-card">
                   {preview.items.slice(0, PREVIEW_LIMIT).map((it, i) => (
-                    <PreviewRow key={it.trackId} item={it} position={i + 1} />
+                    <PreviewRow key={it.trackId} item={it} position={i + 1} showCleaned={cleanPrefixes} />
                   ))}
                 </ul>
                 {preview.items.length > PREVIEW_LIMIT && (
@@ -315,6 +334,7 @@ export function RenamePanel() {
               </>
             )}
           </Section>
+
 
           <div className="grid grid-cols-2 gap-2">
             <button
@@ -495,22 +515,37 @@ function ScopeOption({
   );
 }
 
-function PreviewRow({ item, position }: { item: RenamePreviewItem; position: number }) {
+function PreviewRow({
+  item,
+  position,
+  showCleaned,
+}: {
+  item: RenamePreviewItem;
+  position: number;
+  showCleaned: boolean;
+}) {
+  const cleanedDiffers = showCleaned && item.cleanedName !== item.oldName;
   return (
     <li className="flex gap-3 px-3 py-2 text-xs">
       <span className="w-10 shrink-0 text-right font-semibold tabular-nums text-[var(--primary-glow)]">
         {String(position).padStart(3, "0")}
       </span>
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 space-y-0.5">
         <div className="truncate text-muted-foreground" title={item.oldName}>
           {item.oldName}
         </div>
+        {cleanedDiffers && (
+          <div className="truncate text-[var(--primary-glow)]/80" title={item.cleanedName}>
+            ↳ {item.cleanedName}
+          </div>
+        )}
         <div
           className={`truncate tabular-nums ${item.unchanged ? "text-muted-foreground" : "text-foreground font-medium"}`}
           title={item.newName}
         >
           → {item.newName}
           {item.unchanged && <span className="ml-2 text-[10px] uppercase text-muted-foreground">inchangé</span>}
+          {item.duplicate && <span className="ml-2 text-[10px] uppercase text-[var(--primary-glow)]">auto-suffixe</span>}
         </div>
       </div>
     </li>
