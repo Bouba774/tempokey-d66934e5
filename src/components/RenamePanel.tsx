@@ -316,14 +316,14 @@ export function RenamePanel() {
 
       {step === "preview" && preview && (
         <div className="space-y-3">
-          <Section title={`Aperçu (${preview.changeCount.toLocaleString()} modifications)`}>
+          <Section title={`Aperçu (${preview.changeCount.toLocaleString()} modifications${preview.duplicateCount > 0 ? ` · ${preview.duplicateCount} conflit${preview.duplicateCount > 1 ? "s" : ""} auto-résolu${preview.duplicateCount > 1 ? "s" : ""}` : ""})`}>
             {preview.items.length === 0 ? (
               <p className="text-sm text-muted-foreground">Aucun morceau à renommer.</p>
             ) : (
               <>
                 <ul className="divide-y divide-border rounded-lg border border-border bg-card">
                   {preview.items.slice(0, PREVIEW_LIMIT).map((it, i) => (
-                    <PreviewRow key={it.trackId} item={it} position={i + 1} />
+                    <PreviewRow key={it.trackId} item={it} position={i + 1} showCleaned={cleanPrefixes} />
                   ))}
                 </ul>
                 {preview.items.length > PREVIEW_LIMIT && (
@@ -334,6 +334,7 @@ export function RenamePanel() {
               </>
             )}
           </Section>
+
 
           <div className="grid grid-cols-2 gap-2">
             <button
