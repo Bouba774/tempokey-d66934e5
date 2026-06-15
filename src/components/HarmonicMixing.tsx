@@ -40,45 +40,31 @@ function PlayBtn({ track }: { track: Track }) {
   );
 }
 
-function EnergyPill({ track }: { track: Pick<Track, "bpm" | "camelot"> }) {
-  const level = energyLevel(track);
-  const color =
-    level === "high"
-      ? "bg-[var(--destructive,#ef4444)]/15 text-[var(--destructive,#ef4444)]"
-      : level === "medium"
-        ? "bg-[var(--primary)]/15 text-[var(--primary-glow)]"
-        : "bg-[var(--surface-elevated)] text-muted-foreground";
-  return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${color}`}>
-      {energyLabel(level)}
-    </span>
-  );
-}
-
 function SuggestionRow({ s, source }: { s: Suggestion; source: Track }) {
   const bpmDelta =
     source.bpm && s.track.bpm ? s.track.bpm - source.bpm : null;
   return (
-    <li className="group flex items-center gap-3 rounded-lg border border-border bg-[var(--surface-elevated)] px-3 py-2 transition-colors hover:border-[var(--accent)]/40 hover:bg-[var(--accent)]/5">
-      <div className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-[var(--accent)]/15 text-[11px] font-semibold text-[var(--accent)] tabular-nums ring-1 ring-[var(--accent)]/25">
-        {s.track.camelot ?? "—"}
-      </div>
+    <li className="group flex items-center gap-3 rounded-lg border border-border bg-[var(--surface-elevated)] px-3 py-2 transition-all hover:border-[var(--accent)]/40 hover:bg-[var(--accent)]/5 hover:translate-x-0.5">
+      <CamelotBadge code={s.track.camelot} size="sm" />
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm text-foreground">{s.track.title}</div>
-        <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground tabular-nums">
+        <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground tabular-nums">
           <span>{s.track.bpm ?? "—"} BPM</span>
           {bpmDelta !== null && bpmDelta !== 0 && (
-            <span className={bpmDelta > 0 ? "text-[var(--primary-glow)]" : "text-muted-foreground"}>
+            <span
+              className={`rounded px-1 ${
+                bpmDelta > 0
+                  ? "bg-[var(--primary)]/15 text-[var(--primary-glow)]"
+                  : "bg-[var(--surface-elevated)] text-muted-foreground"
+              }`}
+            >
               {bpmDelta > 0 ? "+" : ""}
               {bpmDelta.toFixed(0)}
             </span>
           )}
-          <span className="text-border">·</span>
-          <EnergyPill track={s.track} />
+          <EnergyMeter track={s.track} />
+          <CompatibilityBadge source={source} target={s.track} compact />
         </div>
-      </div>
-      <div className="text-[10px] text-muted-foreground tabular-nums">
-        {Math.round(s.score)}
       </div>
       <PlayBtn track={s.track} />
     </li>
