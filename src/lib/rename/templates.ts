@@ -57,17 +57,13 @@ interface OrderingResult {
   orderById: Map<string, number>;
 }
 
-/** Determine display order for a template. dj-order sorts by BPM asc, then title. */
-function orderTracks(template: TemplateId, tracks: Track[]): OrderingResult {
+/**
+ * Determine display order. We *always* preserve the caller's input order so
+ * the renaming respects the global active order chosen elsewhere in the app
+ * (Auto Mix Order, Harmonic Mixing, Set Builder, manual reorder, etc.).
+ */
+function orderTracks(_template: TemplateId, tracks: Track[]): OrderingResult {
   const ordered = tracks.slice();
-  if (template === "dj-order") {
-    ordered.sort((a, b) => {
-      const ba = a.bpm ?? Number.POSITIVE_INFINITY;
-      const bb = b.bpm ?? Number.POSITIVE_INFINITY;
-      if (ba !== bb) return ba - bb;
-      return a.title.localeCompare(b.title);
-    });
-  }
   const orderById = new Map<string, number>();
   ordered.forEach((t, i) => orderById.set(t.id, i + 1));
   return { ordered, orderById };
