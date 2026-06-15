@@ -19,6 +19,9 @@ import { useLibraryStore, type Track } from "@/lib/library-store";
 import { useOrderingStore, useOrderedTracks } from "@/lib/ordering-store";
 import { FilterSheet } from "./FilterSheet";
 import { TrackDetailSheet } from "./TrackDetailSheet";
+import { CamelotBadge } from "./viz/CamelotBadge";
+import { EnergyMeter } from "./viz/EnergyMeter";
+import { CompatibilityBadge } from "./viz/CompatibilityBadge";
 import {
   confidenceLabel,
   confidenceTone,
@@ -41,6 +44,7 @@ function TrackRow({
   onMoveDown,
   canMoveUp,
   canMoveDown,
+  compareTo,
 }: {
   track: Track;
   index: number;
@@ -52,6 +56,7 @@ function TrackRow({
   onMoveDown: () => void;
   canMoveUp: boolean;
   canMoveDown: boolean;
+  compareTo: Track | null;
 }) {
   const isCurrent = usePlayerStore((s) => s.currentId === track.id);
   const isPlaying = usePlayerStore((s) => s.isPlaying && s.currentId === track.id);
@@ -147,18 +152,18 @@ function TrackRow({
               />
             )}
           </div>
-          <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground tabular-nums">
+          <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground tabular-nums">
+            <CamelotBadge code={track.camelot} size="xs" />
             <span className="inline-flex items-center gap-0.5">
               {track.bpm ?? "—"} BPM
               {track.bpmLocked && <Lock className="h-2.5 w-2.5" />}
             </span>
-            <span className="text-border">·</span>
-            <span className="inline-flex items-center gap-0.5">
-              {track.camelot ?? "—"}
-              {track.keyLocked && <Lock className="h-2.5 w-2.5" />}
-            </span>
+            <EnergyMeter track={track} />
             <span className="text-border">·</span>
             <span>{track.duration ?? "—"}</span>
+            {compareTo && compareTo.id !== track.id && (
+              <CompatibilityBadge source={compareTo} target={track} compact />
+            )}
           </div>
         </div>
       </button>
@@ -217,6 +222,13 @@ export function TrackList() {
     () => applyFiltersOnly(ordered, query, filters),
     [ordered, query, filters],
   );
+
+  // When the user has selected a single track, compare every row to it.
+  const compareTo = useMemo<Track | null>(() => {
+    if (selectedIds.size !== 1) return null;
+    const id = selectedIds.values().next().value as string | undefined;
+    return id ? ordered.find((t) => t.id === id) ?? null : null;
+  }, [selectedIds, ordered]);
 
   const activeCount = filtersActiveCount(filters);
 
@@ -317,6 +329,7 @@ export function TrackList() {
                   onMoveDown={() => moveBy(track.id, 1)}
                   canMoveUp={orderedIndex > 0}
                   canMoveDown={orderedIndex < ordered.length - 1}
+                  compareTo={compareTo}
                 />
               </div>
             );

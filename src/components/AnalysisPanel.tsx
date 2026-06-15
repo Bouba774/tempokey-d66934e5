@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { HarmonicMixing } from "./HarmonicMixing";
 import { SetBuilder } from "./SetBuilder";
+import { DjDashboard } from "./viz/DjDashboard";
 import { confidenceLabel, confidenceTone } from "@/lib/corrections";
 
 export function AnalysisPanel() {
@@ -47,18 +48,8 @@ export function AnalysisPanel() {
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-      <div className="grid grid-cols-3 gap-2">
-        {[
-          { label: "Total", value: total },
-          { label: "Analysés", value: analyzed },
-          { label: "Restants", value: remaining },
-        ].map((s) => (
-          <div key={s.label} className="rounded-xl border border-border bg-card p-3">
-            <div className="text-xs text-muted-foreground">{s.label}</div>
-            <div className="mt-1 text-xl font-semibold tabular-nums">{s.value.toLocaleString()}</div>
-          </div>
-        ))}
-      </div>
+      <DjDashboard />
+
 
       <div className="rounded-xl border border-border bg-card p-4">
         <div className="flex items-center justify-between mb-2">
