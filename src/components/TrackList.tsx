@@ -152,18 +152,18 @@ function TrackRow({
               />
             )}
           </div>
-          <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground tabular-nums">
+          <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground tabular-nums">
+            <CamelotBadge code={track.camelot} size="xs" />
             <span className="inline-flex items-center gap-0.5">
               {track.bpm ?? "—"} BPM
               {track.bpmLocked && <Lock className="h-2.5 w-2.5" />}
             </span>
-            <span className="text-border">·</span>
-            <span className="inline-flex items-center gap-0.5">
-              {track.camelot ?? "—"}
-              {track.keyLocked && <Lock className="h-2.5 w-2.5" />}
-            </span>
+            <EnergyMeter track={track} />
             <span className="text-border">·</span>
             <span>{track.duration ?? "—"}</span>
+            {compareTo && compareTo.id !== track.id && (
+              <CompatibilityBadge source={compareTo} target={track} compact />
+            )}
           </div>
         </div>
       </button>
