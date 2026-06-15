@@ -4,6 +4,8 @@ import { get as idbGet, set as idbSet, del as idbDel } from "idb-keyval";
 export const AUDIO_EXTENSIONS = ["mp3", "wav", "flac", "aac"] as const;
 export type AudioExtension = (typeof AUDIO_EXTENSIONS)[number];
 
+export type TrackStatus = "pending" | "analyzing" | "done" | "error";
+
 export interface Track {
   id: string;
   title: string;
@@ -11,10 +13,15 @@ export interface Track {
   filePath: string;
   extension: string;
   size: number | null;
+  fileHash: string | null;
   bpm: number | null;
   key: string | null;
+  camelot: string | null;
+  durationSec: number | null;
   duration: string | null;
   analyzed: boolean;
+  status: TrackStatus;
+  error?: string | null;
 }
 
 export interface Library {
@@ -42,6 +49,13 @@ interface LibraryState {
   clearLibrary: () => Promise<void>;
   toggleSelected: (id: string) => void;
   clearSelection: () => void;
+  updateTrack: (id: string, patch: Partial<Track>) => void;
+  flush: () => Promise<void>;
+  // Transient (not persisted): file handles for the current import session.
+  setFiles: (entries: Array<{ trackId: string; file: File }>) => void;
+  getFile: (trackId: string) => File | undefined;
+  clearFiles: () => void;
+  fileMapVersion: number;
 }
 
 const IDB_LIBRARY_KEY = "tempokey:active-library";
@@ -70,27 +84,35 @@ export interface ImportProgress {
 export async function buildLibraryFromFiles(
   files: File[],
   onProgress?: (p: ImportProgress) => void,
-): Promise<Library> {
+): Promise<{ library: Library; files: Array<{ trackId: string; file: File }> }> {
   const audio = files.filter((f) => isAudioFile(f.name));
   const total = audio.length;
   onProgress?.({ phase: "scan", scanned: 0, total });
 
   const tracks: Track[] = new Array(total);
+  const fileEntries: Array<{ trackId: string; file: File }> = new Array(total);
   for (let i = 0; i < total; i++) {
     const f = audio[i];
     const path = (f as File & { webkitRelativePath?: string }).webkitRelativePath || f.name;
+    const id = `${i}-${path}`;
     tracks[i] = {
-      id: `${i}-${path}`,
+      id,
       title: stripExt(f.name),
       fileName: f.name,
       filePath: path,
       extension: getExt(f.name),
       size: typeof f.size === "number" ? f.size : null,
+      fileHash: null,
       bpm: null,
       key: null,
+      camelot: null,
+      durationSec: null,
       duration: null,
       analyzed: false,
+      status: "pending",
+      error: null,
     };
+    fileEntries[i] = { trackId: id, file: f };
     if (i % 200 === 0) onProgress?.({ phase: "scan", scanned: i + 1, total });
   }
   onProgress?.({ phase: "build", scanned: total, total });
@@ -107,7 +129,7 @@ export async function buildLibraryFromFiles(
     tracks,
   };
   onProgress?.({ phase: "done", scanned: total, total });
-  return lib;
+  return { library: lib, files: fileEntries };
 }
 
 function metaOf(lib: Library): LibraryMeta {
@@ -129,6 +151,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   lastLibraryMeta: null,
   hydrated: false,
   selectedIds: new Set(),
+  fileMapVersion: 0,
 
   setLibrary: async (lib) => {
     const meta = metaOf(lib);
@@ -172,7 +195,8 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       await idbDel(IDB_LIBRARY_KEY);
       localStorage.removeItem(META_KEY);
     } catch {}
-    set({ library: null, lastLibraryMeta: null, selectedIds: new Set() });
+    fileMap.clear();
+    set({ library: null, lastLibraryMeta: null, selectedIds: new Set(), fileMapVersion: get().fileMapVersion + 1 });
   },
 
   toggleSelected: (id) => {
@@ -182,4 +206,65 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     set({ selectedIds: next });
   },
   clearSelection: () => set({ selectedIds: new Set() }),
+
+  updateTrack: (id, patch) => {
+    const lib = get().library;
+    if (!lib) return;
+    let changed = false;
+    const tracks = lib.tracks.map((t) => {
+      if (t.id !== id) return t;
+      changed = true;
+      return { ...t, ...patch };
+    });
+    if (!changed) return;
+    const nextLib: Library = { ...lib, tracks };
+    set({ library: nextLib });
+    schedulePersist(nextLib);
+  },
+
+  flush: async () => {
+    await flushNow(get().library);
+  },
+
+  setFiles: (entries) => {
+    for (const { trackId, file } of entries) fileMap.set(trackId, file);
+    set({ fileMapVersion: get().fileMapVersion + 1 });
+  },
+  getFile: (trackId) => fileMap.get(trackId),
+  clearFiles: () => {
+    fileMap.clear();
+    set({ fileMapVersion: get().fileMapVersion + 1 });
+  },
 }));
+
+// ---- Transient in-memory file handles (not persisted) ----
+const fileMap = new Map<string, File>();
+
+// ---- Debounced persistence of library updates during analysis ----
+let persistTimer: ReturnType<typeof setTimeout> | null = null;
+let pendingLib: Library | null = null;
+
+function schedulePersist(lib: Library) {
+  pendingLib = lib;
+  if (persistTimer) return;
+  persistTimer = setTimeout(() => {
+    persistTimer = null;
+    const l = pendingLib;
+    pendingLib = null;
+    if (l) void idbSet(IDB_LIBRARY_KEY, l).catch(() => {});
+  }, 800);
+}
+
+async function flushNow(lib: Library | null) {
+  if (persistTimer) {
+    clearTimeout(persistTimer);
+    persistTimer = null;
+  }
+  const l = pendingLib ?? lib;
+  pendingLib = null;
+  if (l) {
+    try {
+      await idbSet(IDB_LIBRARY_KEY, l);
+    } catch {}
+  }
+}
