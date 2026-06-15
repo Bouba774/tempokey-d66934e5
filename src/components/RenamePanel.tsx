@@ -515,22 +515,37 @@ function ScopeOption({
   );
 }
 
-function PreviewRow({ item, position }: { item: RenamePreviewItem; position: number }) {
+function PreviewRow({
+  item,
+  position,
+  showCleaned,
+}: {
+  item: RenamePreviewItem;
+  position: number;
+  showCleaned: boolean;
+}) {
+  const cleanedDiffers = showCleaned && item.cleanedName !== item.oldName;
   return (
     <li className="flex gap-3 px-3 py-2 text-xs">
       <span className="w-10 shrink-0 text-right font-semibold tabular-nums text-[var(--primary-glow)]">
         {String(position).padStart(3, "0")}
       </span>
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 space-y-0.5">
         <div className="truncate text-muted-foreground" title={item.oldName}>
           {item.oldName}
         </div>
+        {cleanedDiffers && (
+          <div className="truncate text-[var(--primary-glow)]/80" title={item.cleanedName}>
+            ↳ {item.cleanedName}
+          </div>
+        )}
         <div
           className={`truncate tabular-nums ${item.unchanged ? "text-muted-foreground" : "text-foreground font-medium"}`}
           title={item.newName}
         >
           → {item.newName}
           {item.unchanged && <span className="ml-2 text-[10px] uppercase text-muted-foreground">inchangé</span>}
+          {item.duplicate && <span className="ml-2 text-[10px] uppercase text-[var(--primary-glow)]">auto-suffixe</span>}
         </div>
       </div>
     </li>
