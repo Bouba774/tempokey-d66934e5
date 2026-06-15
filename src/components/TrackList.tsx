@@ -237,7 +237,7 @@ export function TrackList() {
         </div>
       )}
 
-      <div ref={parentRef} className="flex-1 overflow-y-auto px-4 pb-6">
+      <div ref={parentRef} className="flex-1 overflow-y-auto px-4 pb-32">
         <div style={{ height: virtualizer.getTotalSize(), width: "100%", position: "relative" }}>
           {virtualizer.getVirtualItems().map((vi) => {
             const track = filtered[vi.index];

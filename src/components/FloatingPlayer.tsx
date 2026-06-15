@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Pause, Play, Square, Volume2, VolumeX } from "lucide-react";
 import { usePlayerStore, formatTime } from "@/lib/audio/player-store";
-import { useLibraryStore } from "@/lib/audio/../library-store";
+import { useLibraryStore } from "@/lib/library-store";
 import { Waveform } from "./Waveform";
 
 export function FloatingPlayer() {
