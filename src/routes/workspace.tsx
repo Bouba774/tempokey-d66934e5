@@ -7,6 +7,7 @@ import { TrackList } from "@/components/TrackList";
 import { AnalysisPanel } from "@/components/AnalysisPanel";
 import { RenamePanel } from "@/components/RenamePanel";
 import { DuplicatesPanel } from "@/components/DuplicatesPanel";
+import { LibraryContextCard } from "@/components/LibraryContextCard";
 
 export const Route = createFileRoute("/workspace")({
   head: () => ({ meta: [{ title: "Workspace — TempoKey" }] }),
@@ -47,7 +48,9 @@ function Workspace() {
   return (
     <div className="flex min-h-[100dvh] flex-col bg-background">
       <WorkspaceHeader />
-      <div role="tablist" className="sticky top-[65px] z-20 flex gap-1 overflow-x-auto border-b border-border bg-background px-4">
+      <LibraryContextCard />
+      <div role="tablist" className="sticky top-[65px] z-20 mt-4 flex gap-1 overflow-x-auto border-b border-border bg-background px-4">
+
         {([
           { id: "library", label: "Bibliothèque" },
           { id: "analysis", label: "Analyse" },
