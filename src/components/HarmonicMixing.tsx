@@ -108,6 +108,20 @@ export function HarmonicMixing() {
   const library = useLibraryStore((s) => s.library);
   const selectedIds = useLibraryStore((s) => s.selectedIds);
   const clear = useLibraryStore((s) => s.clearSelection);
+  const setOrder = useOrderingStore((s) => s.setOrder);
+
+  function applySuggestionList(
+    src: OrderSource,
+    label: string,
+    items: Suggestion[],
+    sourceTrack: Track,
+  ) {
+    const ids = [sourceTrack.id, ...items.map((s) => s.track.id)];
+    setOrder(src, { ids, label });
+    toast.success(`Ordre actif : ${label}`, {
+      description: `${ids.length} morceaux en tête de bibliothèque.`,
+    });
+  }
 
   const source = useMemo<Track | null>(() => {
     if (!library) return null;
