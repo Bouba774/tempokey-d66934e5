@@ -31,16 +31,6 @@ const TYPE_ICONS: Record<SetType, React.ReactNode> = {
   closing: <Moon className="h-4 w-4" />,
 };
 
-function energyDot(t: Track) {
-  const l = energyLevel(t);
-  const c =
-    l === "high"
-      ? "bg-[var(--destructive,#ef4444)]"
-      : l === "medium"
-        ? "bg-[var(--primary-glow)]"
-        : "bg-muted-foreground";
-  return <span className={`h-1.5 w-1.5 rounded-full ${c}`} />;
-}
 
 function SetPlayBtn({ track }: { track: Track }) {
   const isCurrent = usePlayerStore((s) => s.currentId === track.id);
