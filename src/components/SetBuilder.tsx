@@ -42,6 +42,7 @@ function energyDot(t: Track) {
 export function SetBuilder() {
   const library = useLibraryStore((s) => s.library);
   const tracks = library?.tracks ?? [];
+  const setOrder = useOrderingStore((s) => s.setOrder);
   const analyzedCount = tracks.filter(
     (t) => t.analyzed && t.bpm && t.camelot,
   ).length;
@@ -50,6 +51,23 @@ export function SetBuilder() {
   const [setTracks, setSetTracks] = useState<Track[]>([]);
   const [validated, setValidated] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+
+  function promoteToActive() {
+    if (!activeType || setTracks.length === 0) return;
+    const src: OrderSource =
+      activeType === "auto"
+        ? "auto-mix"
+        : activeType === "warmup"
+          ? "setbuilder-warmup"
+          : activeType === "peak"
+            ? "setbuilder-peak"
+            : "setbuilder-closing";
+    const label = SET_PRESETS[activeType].label;
+    setOrder(src, { ids: setTracks.map((t) => t.id), label });
+    toast.success(`Ordre actif : ${label}`, {
+      description: `${setTracks.length} morceaux appliqués à la bibliothèque.`,
+    });
+  }
 
   const generate = (type: SetType) => {
     const result = buildSet(type, tracks);
