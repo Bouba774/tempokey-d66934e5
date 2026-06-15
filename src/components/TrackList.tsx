@@ -210,6 +210,7 @@ export function TrackList() {
   const [filters, setFilters] = useState<LibraryFilters>(DEFAULT_FILTERS);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [reorderMode, setReorderMode] = useState(false);
+  const [detailId, setDetailId] = useState<string | null>(null);
   const parentRef = useRef<HTMLDivElement>(null);
 
   const filtered = useMemo(
