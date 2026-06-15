@@ -29,7 +29,8 @@ const PREVIEW_LIMIT = 200;
 export function RenamePanel() {
   const library = useLibraryStore((s) => s.library);
   const selectedIds = useLibraryStore((s) => s.selectedIds);
-  const tracks = library?.tracks ?? [];
+  const tracks = useOrderedTracks();
+  const activeOrder = useOrderingStore((s) => s.active);
 
   const [step, setStep] = useState<Step>("select");
   const [template, setTemplate] = useState<TemplateId>("dj-order");
