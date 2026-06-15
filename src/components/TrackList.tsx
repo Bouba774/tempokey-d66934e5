@@ -44,6 +44,7 @@ function TrackRow({
   onMoveDown,
   canMoveUp,
   canMoveDown,
+  compareTo,
 }: {
   track: Track;
   index: number;
@@ -55,6 +56,7 @@ function TrackRow({
   onMoveDown: () => void;
   canMoveUp: boolean;
   canMoveDown: boolean;
+  compareTo: Track | null;
 }) {
   const isCurrent = usePlayerStore((s) => s.currentId === track.id);
   const isPlaying = usePlayerStore((s) => s.isPlaying && s.currentId === track.id);
