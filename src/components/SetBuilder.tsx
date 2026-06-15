@@ -1,6 +1,8 @@
 import { useMemo, useState, useRef } from "react";
 import { toast } from "sonner";
 import { useLibraryStore, type Track } from "@/lib/library-store";
+import { usePlayerStore } from "@/lib/audio/player-store";
+import { Play, Pause } from "lucide-react";
 import { useOrderingStore, type OrderSource } from "@/lib/ordering-store";
 import {
   buildSet,
@@ -37,6 +39,27 @@ function energyDot(t: Track) {
         ? "bg-[var(--primary-glow)]"
         : "bg-muted-foreground";
   return <span className={`h-1.5 w-1.5 rounded-full ${c}`} />;
+}
+
+function SetPlayBtn({ track }: { track: Track }) {
+  const isCurrent = usePlayerStore((s) => s.currentId === track.id);
+  const isPlaying = usePlayerStore((s) => s.isPlaying && isCurrent);
+  const play = usePlayerStore((s) => s.play);
+  const toggle = usePlayerStore((s) => s.toggle);
+  return (
+    <button
+      aria-label={isPlaying ? "Pause" : "Pré-écouter"}
+      onClick={() => (isCurrent ? toggle() : void play(track))}
+      className={`grid h-7 w-7 shrink-0 place-items-center rounded-full transition-transform active:scale-95 ${
+        isCurrent
+          ? "text-[var(--primary-foreground)]"
+          : "bg-[var(--surface-elevated)] text-[var(--primary-glow)] hover:bg-[var(--primary)]/20"
+      }`}
+      style={isCurrent ? { background: "var(--gradient-primary)" } : undefined}
+    >
+      {isPlaying ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3 translate-x-[1px]" />}
+    </button>
+  );
 }
 
 export function SetBuilder() {
@@ -233,6 +256,7 @@ export function SetBuilder() {
                       <span>{t.duration ?? "—"}</span>
                     </div>
                   </div>
+                  <SetPlayBtn track={t} />
                   <button
                     onClick={() => removeAt(i)}
                     aria-label="Retirer"
