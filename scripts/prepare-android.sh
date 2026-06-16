@@ -14,7 +14,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT_DIR"
 
-LOGO_URL="${TEMPOKEY_LOGO_URL:-https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/11ea2fe2-f750-4207-924d-713a57d9fe69}"
+LOGO_URL="${TEMPOKEY_LOGO_URL:-https://tempokey.lovable.app/__l5e/assets-v1/64139802-3985-40df-b3c7-03e7686e94fd/tempokey-logo.png}"
 WEB_DIR="dist/android"
 RES_DIR="resources"
 
