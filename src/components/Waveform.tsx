@@ -27,7 +27,7 @@ export function Waveform({
   const [loading, setLoading] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const getFile = useLibraryStore((s) => s.getFile);
+  const ensureFile = useLibraryStore((s) => s.ensureFile);
   const fileMapVersion = useLibraryStore((s) => s.fileMapVersion);
 
   const isCurrent = usePlayerStore((s) => s.currentId === track.id);
