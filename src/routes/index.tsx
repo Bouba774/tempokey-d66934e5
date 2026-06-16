@@ -279,7 +279,7 @@ function Home() {
               return (
                 <div
                   key={f.title}
-                  className="group rounded-xl border border-border bg-[var(--surface-elevated)] p-3 transition-all hover:border-[var(--primary)]/40 hover:-translate-y-0.5"
+                  className="hover-lift group rounded-xl border border-border bg-[var(--surface-elevated)] p-3 hover:border-[var(--primary)]/40"
                 >
                   <div
                     className="grid h-8 w-8 place-items-center rounded-lg text-[var(--accent)] transition-colors group-hover:text-[var(--primary-glow)]"

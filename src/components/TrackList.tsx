@@ -22,6 +22,9 @@ import { TrackDetailSheet } from "./TrackDetailSheet";
 import { CamelotBadge } from "./viz/CamelotBadge";
 import { EnergyMeter } from "./viz/EnergyMeter";
 import { CompatibilityBadge } from "./viz/CompatibilityBadge";
+import { EmptyState } from "./ui/empty-state";
+import { NowPlayingBars } from "./ui/now-playing-bars";
+import { Music2, SearchX } from "lucide-react";
 import {
   confidenceLabel,
   confidenceTone,
@@ -133,10 +136,11 @@ function TrackRow({
         )}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 truncate text-sm font-medium text-foreground">
-            {selected && !reorderMode && (
+            {isCurrent && <NowPlayingBars playing={isPlaying} className="shrink-0" />}
+            {selected && !reorderMode && !isCurrent && (
               <Check className="inline h-3.5 w-3.5 shrink-0 text-[var(--primary-glow)]" />
             )}
-            {conf != null && (
+            {conf != null && !isCurrent && (
               <span
                 aria-label="Niveau de confiance"
                 title="Niveau de confiance"
@@ -336,9 +340,19 @@ export function TrackList() {
           })}
         </div>
         {filtered.length === 0 && (
-          <div className="grid place-items-center py-16 text-sm text-muted-foreground">
-            Aucun morceau ne correspond.
-          </div>
+          ordered.length === 0 ? (
+            <EmptyState
+              icon={Music2}
+              title="Bibliothèque vide"
+              description="Importez votre première bibliothèque musicale pour démarrer."
+            />
+          ) : (
+            <EmptyState
+              icon={SearchX}
+              title="Aucun résultat"
+              description="Aucun morceau ne correspond à votre recherche ou à vos filtres."
+            />
+          )
         )}
       </div>
 
