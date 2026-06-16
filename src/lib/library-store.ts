@@ -1,7 +1,9 @@
 import { create } from "zustand";
 import { get as idbGet, set as idbSet, del as idbDel } from "idb-keyval";
 
-export const AUDIO_EXTENSIONS = ["mp3", "wav", "flac", "aac"] as const;
+export const AUDIO_EXTENSIONS = [
+  "mp3", "wav", "flac", "aiff", "aif", "m4a", "aac", "ogg", "opus",
+] as const;
 export type AudioExtension = (typeof AUDIO_EXTENSIONS)[number];
 
 export type TrackStatus = "pending" | "analyzing" | "done" | "error";
