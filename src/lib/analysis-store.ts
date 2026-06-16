@@ -200,7 +200,7 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
     if (!lib) return;
     const idSet = new Set(ids);
     const queue = lib.tracks.filter(
-      (t) => idSet.has(t.id) && !!useLibraryStore.getState().getFile(t.id),
+      (t) => idSet.has(t.id) && useLibraryStore.getState().hasFileSource(t.id),
     );
     if (queue.length === 0) return;
     // Reset status so the UI shows progress; do NOT clear locked fields.
