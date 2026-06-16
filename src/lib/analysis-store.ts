@@ -100,7 +100,7 @@ async function runQueue(
     for (;;) {
       const track = next();
       if (!track) return;
-      const file = useLibraryStore.getState().getFile(track.id);
+      const file = await useLibraryStore.getState().ensureFile(track.id);
       if (!file) continue;
 
       useLibraryStore.getState().updateTrack(track.id, { status: "analyzing" });
