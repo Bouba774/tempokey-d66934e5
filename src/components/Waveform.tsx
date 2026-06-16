@@ -51,7 +51,7 @@ export function Waveform({
         setData(cached);
         return;
       }
-      const file = getFile(track.id);
+      const file = await ensureFile(track.id);
       if (!file) return;
       setLoading(true);
       const generated = await generateWaveform(track.id, file);
@@ -62,7 +62,7 @@ export function Waveform({
     return () => {
       cancelled = true;
     };
-  }, [track.id, data, getFile, fileMapVersion]);
+  }, [track.id, data, ensureFile, fileMapVersion]);
 
   // Draw
   const draw = useCallback(() => {
