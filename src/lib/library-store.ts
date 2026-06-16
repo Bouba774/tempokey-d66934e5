@@ -157,6 +157,43 @@ export async function buildLibraryFromFiles(
   return { library: lib, files: fileEntries };
 }
 
+/**
+ * Build a Library from the result of a native Android folder scan.
+ * Files are NOT loaded eagerly — they will be fetched on demand via
+ * `useLibraryStore.getState().ensureFile(trackId)`.
+ */
+export function buildLibraryFromNative(
+  rootName: string,
+  files: Array<{ uri: string; name: string; path: string; size: number; ext: string }>,
+): Library {
+  const tracks: Track[] = files.map((f, i) => {
+    const id = `n${i}-${f.uri}`;
+    return {
+      id,
+      title: stripExt(f.name),
+      fileName: f.name,
+      filePath: f.path,
+      extension: (f.ext || getExt(f.name)).toLowerCase(),
+      size: typeof f.size === "number" ? f.size : null,
+      fileHash: null,
+      bpm: null,
+      key: null,
+      camelot: null,
+      durationSec: null,
+      duration: null,
+      analyzed: false,
+      status: "pending",
+      error: null,
+      nativeUri: f.uri,
+    };
+  });
+  return {
+    id: `lib_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
+    name: rootName || "Bibliothèque",
+    createdAt: Date.now(),
+    tracks,
+  };
+
 function metaOf(lib: Library): LibraryMeta {
   return { id: lib.id, name: lib.name, createdAt: lib.createdAt, trackCount: lib.tracks.length };
 }
