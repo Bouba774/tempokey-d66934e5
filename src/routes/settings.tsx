@@ -593,4 +593,76 @@ function ToggleRow({
   );
 }
 
+/* ---------------- Privacy section (opt-in analytics / crash reports) ---------------- */
+
+function PrivacySection() {
+  const hydrate = usePrivacyStore((s) => s.hydrate);
+  const analytics = usePrivacyStore((s) => s.analytics);
+  const crashReports = usePrivacyStore((s) => s.crashReports);
+  const setPriv = usePrivacyStore((s) => s.set);
+
+  useEffect(() => {
+    hydrate();
+  }, [hydrate]);
+
+  return (
+    <Section title="Confidentialité" icon={<Shield className="h-3.5 w-3.5" />}>
+      <Card>
+        <div className="px-4 pt-3.5 pb-2 text-xs text-muted-foreground">
+          TempoKey fonctionne hors ligne. Ces options sont désactivées par défaut.
+        </div>
+        <ToggleRow
+          icon={<BarChart3 className="h-4 w-4 text-muted-foreground" />}
+          label="Analytics anonymes"
+          hint="Évènements agrégés, jamais de noms de fichiers."
+          checked={analytics}
+          onChange={(v) => setPriv({ analytics: v })}
+        />
+        <div className="border-t border-border/60" />
+        <ToggleRow
+          icon={<Bug className="h-4 w-4 text-muted-foreground" />}
+          label="Rapports de crash"
+          hint="Traces techniques uniquement, aucune donnée personnelle."
+          checked={crashReports}
+          onChange={(v) => setPriv({ crashReports: v })}
+        />
+        <Link
+          to="/privacy"
+          className="flex items-center gap-3 border-t border-border/60 px-4 py-3.5 text-sm hover:bg-accent/30 transition-colors"
+        >
+          <FileText className="h-4 w-4 text-muted-foreground" />
+          <span className="flex-1 font-medium">Lire la politique de confidentialité</span>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        </Link>
+      </Card>
+    </Section>
+  );
+}
+
+function ToggleRow({
+  icon,
+  label,
+  hint,
+  checked,
+  onChange,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  hint?: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center gap-3 px-4 py-3.5">
+      {icon}
+      <div className="min-w-0 flex-1">
+        <div className="text-sm font-medium">{label}</div>
+        {hint && <div className="text-[11px] leading-snug text-muted-foreground">{hint}</div>}
+      </div>
+      <Toggle checked={checked} onChange={onChange} />
+    </div>
+  );
+}
+
+
 
