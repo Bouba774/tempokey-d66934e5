@@ -188,7 +188,7 @@ function Home() {
       <input
         ref={inputRef}
         type="file"
-        accept=".mp3,.wav,.flac,.aac,audio/*"
+        accept=".mp3,.wav,.flac,.aiff,.aif,.m4a,.aac,.ogg,.opus,audio/*"
         multiple
         /* @ts-expect-error non-standard but widely supported attributes */
         webkitdirectory=""
