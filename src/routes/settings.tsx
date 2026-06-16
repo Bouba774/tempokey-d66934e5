@@ -612,15 +612,12 @@ function PrivacySection() {
           TempoKey fonctionne hors ligne. Ces options sont désactivées par défaut.
         </div>
         <ToggleRow
-          icon={<BarChart3 className="h-4 w-4 text-muted-foreground" />}
           label="Analytics anonymes"
           hint="Évènements agrégés, jamais de noms de fichiers."
           checked={analytics}
           onChange={(v) => setPriv({ analytics: v })}
         />
-        <div className="border-t border-border/60" />
         <ToggleRow
-          icon={<Bug className="h-4 w-4 text-muted-foreground" />}
           label="Rapports de crash"
           hint="Traces techniques uniquement, aucune donnée personnelle."
           checked={crashReports}
@@ -639,30 +636,6 @@ function PrivacySection() {
   );
 }
 
-function ToggleRow({
-  icon,
-  label,
-  hint,
-  checked,
-  onChange,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  hint?: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <div className="flex items-center gap-3 px-4 py-3.5">
-      {icon}
-      <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium">{label}</div>
-        {hint && <div className="text-[11px] leading-snug text-muted-foreground">{hint}</div>}
-      </div>
-      <Toggle checked={checked} onChange={onChange} />
-    </div>
-  );
-}
 
 
 
