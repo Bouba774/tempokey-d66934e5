@@ -75,6 +75,10 @@ interface LibraryState {
   // Transient (not persisted): file handles for the current import session.
   setFiles: (entries: Array<{ trackId: string; file: File }>) => void;
   getFile: (trackId: string) => File | undefined;
+  /** Returns true when a File is available *or* a native URI can be loaded. */
+  hasFileSource: (trackId: string) => boolean;
+  /** Lazily resolve a File for a track, fetching from the native SAF bridge when needed. */
+  ensureFile: (trackId: string) => Promise<File | undefined>;
   clearFiles: () => void;
   fileMapVersion: number;
 }
