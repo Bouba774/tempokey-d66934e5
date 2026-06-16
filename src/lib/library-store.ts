@@ -313,6 +313,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
 
 // ---- Transient in-memory file handles (not persisted) ----
 const fileMap = new Map<string, File>();
+const inflightLoads = new Map<string, Promise<File>>();
 
 // ---- Debounced persistence of library updates during analysis ----
 let persistTimer: ReturnType<typeof setTimeout> | null = null;
