@@ -173,6 +173,14 @@ function Home() {
         className="hidden"
       />
 
+      <PermissionExplainModal
+        open={permModalOpen}
+        onContinue={onPermissionContinue}
+        onCancel={() => setPermModalOpen(false)}
+      />
+
+
+
       {/* HERO */}
       <section className="relative overflow-hidden px-6 pt-10 pb-8">
         <div
