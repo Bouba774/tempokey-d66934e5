@@ -143,33 +143,6 @@ export function RenamePanel() {
 
       {step === "select" && (
         <div className="space-y-3">
-          <Section title="Accès au dossier">
-            {hasHandle ? (
-              <div className="flex items-center gap-2 text-sm text-foreground">
-                <CheckCheck className="h-4 w-4 text-[var(--primary-glow)]" />
-                Accès accordé à « {library.name} »
-                <button onClick={grantAccess} className="ml-auto text-xs text-muted-foreground underline">
-                  Changer
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">
-                  Autorisez l'accès en écriture au dossier « {library.name} » pour permettre le renommage local.
-                </p>
-                <button
-                  onClick={grantAccess}
-                  disabled={grantBusy}
-                  className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-[var(--primary-foreground)] disabled:opacity-50"
-                  style={{ background: "var(--gradient-primary)" }}
-                >
-                  {grantBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FolderLock className="h-4 w-4" />}
-                  Autoriser le dossier
-                </button>
-              </div>
-            )}
-          </Section>
-
           <Section title="Portée">
             <div className="grid grid-cols-2 gap-2">
               <ScopeOption
@@ -190,7 +163,7 @@ export function RenamePanel() {
 
           <button
             onClick={() => setStep("template")}
-            disabled={!hasHandle || scopedTracks.length === 0}
+            disabled={scopedTracks.length === 0}
             className="flex h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold text-[var(--primary-foreground)] disabled:opacity-40"
             style={{ background: "var(--gradient-primary)" }}
           >
