@@ -23,6 +23,7 @@ import { CamelotBadge } from "./viz/CamelotBadge";
 import { EnergyMeter } from "./viz/EnergyMeter";
 import { CompatibilityBadge } from "./viz/CompatibilityBadge";
 import { EmptyState } from "./ui/empty-state";
+import { useBackHandler } from "@/hooks/useBackHandler";
 import { NowPlayingBars } from "./ui/now-playing-bars";
 import { Music2, SearchX } from "lucide-react";
 import {
