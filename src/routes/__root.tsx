@@ -90,8 +90,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:site", content: "@Lovable" },
       { name: "twitter:title", content: "TempoKey — Analyse et organise tes bibliothèques audio" },
       { name: "twitter:description", content: "Outil professionnel pour DJs et producteurs : analysez BPM, tonalité et organisez vos bibliothèques audio." },
-      { property: "og:image", content: "https://tempokey.lovable.app/__l5e/assets-v1/8d9af5cd-e723-4411-acf4-24e5008f2204/tempokey-logo.png" },
-      { name: "twitter:image", content: "https://tempokey.lovable.app/__l5e/assets-v1/8d9af5cd-e723-4411-acf4-24e5008f2204/tempokey-logo.png" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/1rSkoGGFpog371uZATdrO6SRHzN2/social-images/social-1781977880028-1000188518.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/1rSkoGGFpog371uZATdrO6SRHzN2/social-images/social-1781977880028-1000188518.webp" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
