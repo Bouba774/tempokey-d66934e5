@@ -69,10 +69,13 @@ echo "✓ index.html links bundled assets"
 
 echo "▶ Preparing icon & splash sources…"
 mkdir -p "$RES_DIR"
+# Use the committed official logo when present, otherwise download from CDN.
 if [ ! -f "$RES_DIR/icon.png" ]; then
   curl -L --silent --fail "$LOGO_URL" -o "$RES_DIR/icon.png"
 fi
-cp -f "$RES_DIR/icon.png" "$RES_DIR/splash.png"
+if [ ! -f "$RES_DIR/splash.png" ]; then
+  cp -f "$RES_DIR/icon.png" "$RES_DIR/splash.png"
+fi
 cp -f "$RES_DIR/icon.png" "android-resources/logo.png" 2>/dev/null || true
 
 echo "▶ Adding Android platform (if missing)…"
@@ -82,10 +85,10 @@ fi
 
 echo "▶ Generating launcher icons, adaptive icon & splash…"
 npx @capacitor/assets generate --android \
-  --iconBackgroundColor "#0A0D14" \
-  --iconBackgroundColorDark "#0A0D14" \
-  --splashBackgroundColor "#0A0D14" \
-  --splashBackgroundColorDark "#0A0D14" || {
+  --iconBackgroundColor "#FFFFFF" \
+  --iconBackgroundColorDark "#FFFFFF" \
+  --splashBackgroundColor "#FFFFFF" \
+  --splashBackgroundColorDark "#FFFFFF" || {
     echo "⚠ @capacitor/assets failed; continuing with platform defaults." >&2
   }
 
