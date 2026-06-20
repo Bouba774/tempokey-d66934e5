@@ -22,6 +22,7 @@ import {
   Check,
   Heart,
 } from "lucide-react";
+import { Copy, User } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useThemeStore } from "@/lib/theme-store";
@@ -372,20 +373,13 @@ function SettingsPage() {
                 </div>
               </div>
             </div>
-            <div className="px-5 pb-4 grid gap-2 text-sm">
-              <Field label="Créé par" value="DJ LAMBO Premier" />
-              <Field
-                label="Contact"
-                value={
-                  <a
-                    href="mailto:djlambopremierofficiel@gmail.com"
-                    className="inline-flex items-center gap-1.5 text-primary hover:underline"
-                  >
-                    <Mail className="h-3.5 w-3.5" />
-                    djlambopremierofficiel@gmail.com
-                  </a>
-                }
+            <div className="border-t border-border/60">
+              <MetaRow
+                icon={<User className="h-4 w-4" />}
+                label="Créé par"
+                value="DJ LAMBO Premier"
               />
+              <ContactRow email="djlambopremierofficiel@gmail.com" />
             </div>
           </Card>
           <Card>
