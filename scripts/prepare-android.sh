@@ -10,7 +10,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT_DIR"
 
-LOGO_URL="${TEMPOKEY_LOGO_URL:-https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/11ea2fe2-f750-4207-924d-713a57d9fe69}"
+LOGO_URL="${TEMPOKEY_LOGO_URL:-https://tempokey.lovable.app/__l5e/assets-v1/8d9af5cd-e723-4411-acf4-24e5008f2204/tempokey-logo.png}"
 WEB_DIR="dist/android"
 RES_DIR="resources"
 
@@ -69,10 +69,13 @@ echo "✓ index.html links bundled assets"
 
 echo "▶ Preparing icon & splash sources…"
 mkdir -p "$RES_DIR"
+# Use the committed official logo when present, otherwise download from CDN.
 if [ ! -f "$RES_DIR/icon.png" ]; then
   curl -L --silent --fail "$LOGO_URL" -o "$RES_DIR/icon.png"
 fi
-cp -f "$RES_DIR/icon.png" "$RES_DIR/splash.png"
+if [ ! -f "$RES_DIR/splash.png" ]; then
+  cp -f "$RES_DIR/icon.png" "$RES_DIR/splash.png"
+fi
 cp -f "$RES_DIR/icon.png" "android-resources/logo.png" 2>/dev/null || true
 
 echo "▶ Adding Android platform (if missing)…"
@@ -82,10 +85,10 @@ fi
 
 echo "▶ Generating launcher icons, adaptive icon & splash…"
 npx @capacitor/assets generate --android \
-  --iconBackgroundColor "#0A0D14" \
-  --iconBackgroundColorDark "#0A0D14" \
-  --splashBackgroundColor "#0A0D14" \
-  --splashBackgroundColorDark "#0A0D14" || {
+  --iconBackgroundColor "#FFFFFF" \
+  --iconBackgroundColorDark "#FFFFFF" \
+  --splashBackgroundColor "#FFFFFF" \
+  --splashBackgroundColorDark "#FFFFFF" || {
     echo "⚠ @capacitor/assets failed; continuing with platform defaults." >&2
   }
 

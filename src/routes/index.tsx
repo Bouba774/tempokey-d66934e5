@@ -161,7 +161,7 @@ function Home() {
             <img
               src={logoAsset.url}
               alt="TempoKey"
-              className="h-20 w-20 rounded-2xl"
+              className="h-20 w-20 rounded-2xl bg-white object-contain p-2"
               style={{ boxShadow: "var(--shadow-elegant)" }}
             />
           </div>
