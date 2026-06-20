@@ -3,7 +3,6 @@ import { toast } from "sonner";
 import {
   CheckCheck,
   ChevronRight,
-  FolderLock,
   Loader2,
   RotateCcw,
   ShieldAlert,
@@ -12,13 +11,7 @@ import {
 import { useLibraryStore } from "@/lib/library-store";
 import { useOrderedTracks, useOrderingStore } from "@/lib/ordering-store";
 import { buildPreview, TEMPLATES, TEMPLATE_VARIABLES, type TemplateId, type RenamePreviewItem } from "@/lib/rename/templates";
-import {
-  ensurePermission,
-  isFsAccessSupported,
-  loadDirectoryHandle,
-  pickDirectoryHandle,
-  saveDirectoryHandle,
-} from "@/lib/rename/dir-handle";
+import { isFsAccessSupported } from "@/lib/rename/dir-handle";
 import { applyRename, undoOperation, type ApplyProgress } from "@/lib/rename/engine";
 import { loadHistory, type RenameOperation } from "@/lib/rename/history";
 
@@ -37,8 +30,6 @@ export function RenamePanel() {
   const [customFormat, setCustomFormat] = useState("{ORDER} - {BPM} - {KEY} - {TITLE}");
   const [cleanPrefixes, setCleanPrefixes] = useState(true);
   const [scope, setScope] = useState<"all" | "selection">(selectedIds.size > 0 ? "selection" : "all");
-  const [hasHandle, setHasHandle] = useState(false);
-  const [grantBusy, setGrantBusy] = useState(false);
   const [progress, setProgress] = useState<ApplyProgress | null>(null);
   const [result, setResult] = useState<{ applied: number; failed: number; operationId: string | null } | null>(null);
   const [history, setHistory] = useState<RenameOperation[]>([]);
@@ -46,12 +37,6 @@ export function RenamePanel() {
   const [error, setError] = useState<string | null>(null);
 
   const fsSupported = isFsAccessSupported();
-
-  // Detect existing directory handle for this library
-  useEffect(() => {
-    if (!library) return;
-    void loadDirectoryHandle(library.id).then((h) => setHasHandle(!!h));
-  }, [library]);
 
   // Load history scoped to current library
   useEffect(() => {
@@ -69,29 +54,6 @@ export function RenamePanel() {
     () => (step === "preview" ? buildPreview(template, customFormat, scopedTracks, { cleanPrefixes }) : null),
     [step, template, customFormat, scopedTracks, cleanPrefixes],
   );
-
-  async function grantAccess() {
-    if (!library) return;
-    setGrantBusy(true);
-    setError(null);
-    try {
-      const h = await pickDirectoryHandle();
-      if (!h) {
-        setGrantBusy(false);
-        return;
-      }
-      const ok = await ensurePermission(h, "readwrite");
-      if (!ok) {
-        setError("Permission d'écriture refusée.");
-        setGrantBusy(false);
-        return;
-      }
-      await saveDirectoryHandle(library.id, h);
-      setHasHandle(true);
-    } finally {
-      setGrantBusy(false);
-    }
-  }
 
   async function runApply() {
     if (!preview) return;
@@ -181,33 +143,6 @@ export function RenamePanel() {
 
       {step === "select" && (
         <div className="space-y-3">
-          <Section title="Accès au dossier">
-            {hasHandle ? (
-              <div className="flex items-center gap-2 text-sm text-foreground">
-                <CheckCheck className="h-4 w-4 text-[var(--primary-glow)]" />
-                Accès accordé à « {library.name} »
-                <button onClick={grantAccess} className="ml-auto text-xs text-muted-foreground underline">
-                  Changer
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">
-                  Autorisez l'accès en écriture au dossier « {library.name} » pour permettre le renommage local.
-                </p>
-                <button
-                  onClick={grantAccess}
-                  disabled={grantBusy}
-                  className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-[var(--primary-foreground)] disabled:opacity-50"
-                  style={{ background: "var(--gradient-primary)" }}
-                >
-                  {grantBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FolderLock className="h-4 w-4" />}
-                  Autoriser le dossier
-                </button>
-              </div>
-            )}
-          </Section>
-
           <Section title="Portée">
             <div className="grid grid-cols-2 gap-2">
               <ScopeOption
@@ -228,7 +163,7 @@ export function RenamePanel() {
 
           <button
             onClick={() => setStep("template")}
-            disabled={!hasHandle || scopedTracks.length === 0}
+            disabled={scopedTracks.length === 0}
             className="flex h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold text-[var(--primary-foreground)] disabled:opacity-40"
             style={{ background: "var(--gradient-primary)" }}
           >
