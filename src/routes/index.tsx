@@ -183,6 +183,13 @@ function Home() {
 
   return (
     <main className="min-h-[100dvh] bg-background">
+      <AudioPermissionDialog
+        open={permDialog.open}
+        variant={permDialog.variant}
+        onCancel={() => setPermDialog({ open: false, variant: "request" })}
+        onConfirm={handlePermissionConfirm}
+        onOpenSettings={handleOpenSettings}
+      />
       <input
         ref={inputRef}
         type="file"
