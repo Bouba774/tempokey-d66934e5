@@ -70,9 +70,8 @@ async function defaultBack(canGoBack: boolean): Promise<void> {
   // 3) Root → double-press to exit.
   const now = Date.now();
   if (now - lastExitPromptAt < 2000) {
-    const cap: any = await import(
-      /* @vite-ignore */ "@capacitor/app"
-    ).catch(() => null);
+    // @ts-ignore — installed only in the Android build pipeline.
+    const cap: any = await import("@capacitor/app").catch(() => null);
     cap?.App?.exitApp?.().catch?.(() => {});
     return;
   }
@@ -84,17 +83,14 @@ export async function initAndroidBack(): Promise<void> {
   if (initialised) return;
   initialised = true;
 
-  const core: any = await import(
-    /* @vite-ignore */ "@capacitor/core"
-  ).catch(() => null);
+  // @ts-ignore — installed only in the Android build pipeline.
+  const core: any = await import("@capacitor/core").catch(() => null);
   if (!core?.Capacitor?.isNativePlatform?.()) return;
 
-  const appMod: any = await import(
-    /* @vite-ignore */ "@capacitor/app"
-  ).catch(() => null);
-  const kbMod: any = await import(
-    /* @vite-ignore */ "@capacitor/keyboard"
-  ).catch(() => null);
+  // @ts-ignore — installed only in the Android build pipeline.
+  const appMod: any = await import("@capacitor/app").catch(() => null);
+  // @ts-ignore — installed only in the Android build pipeline.
+  const kbMod: any = await import("@capacitor/keyboard").catch(() => null);
 
   // Track keyboard visibility — first back press should dismiss the keyboard.
   let keyboardVisible = false;
