@@ -215,14 +215,15 @@
 
 
   --sidebar: oklch(1 0 0);
-  --sidebar-foreground: oklch(0.22 0.022 265);
-  --sidebar-primary: oklch(0.55 0.22 295);
+  --sidebar-foreground: oklch(0.18 0.022 265);
+  --sidebar-primary: oklch(0.50 0.22 295);
   --sidebar-primary-foreground: oklch(0.99 0.003 250);
-  --sidebar-accent: oklch(0.95 0.01 250);
-  --sidebar-accent-foreground: oklch(0.22 0.022 265);
-  --sidebar-border: oklch(0.88 0.014 263 / 0.8);
-  --sidebar-ring: oklch(0.55 0.22 295);
+  --sidebar-accent: oklch(0.94 0.008 250);
+  --sidebar-accent-foreground: oklch(0.18 0.022 265);
+  --sidebar-border: oklch(0.82 0.014 263);
+  --sidebar-ring: oklch(0.50 0.22 295);
 }
+
 
 .light body {
   background-image:
