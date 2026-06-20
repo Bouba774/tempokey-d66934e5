@@ -361,10 +361,11 @@ if (!src.includes(importLine)) {
 }
 
 if (!src.includes("registerPlugin(FolderPickerPlugin.class)")) {
-  if (/onCreate\s*\(Bundle savedInstanceState\)\s*\{[\s\S]*?super\.onCreate\([^)]*\);/.test(src)) {
+  // In Capacitor, custom plugins must be registered BEFORE super.onCreate().
+  if (/super\.onCreate\([^)]*\);/.test(src)) {
     src = src.replace(
-      /(super\.onCreate\([^)]*\);)/,
-      `$1\n${registerLine}`,
+      /(\n[ \t]*)(super\.onCreate\([^)]*\);)/,
+      `$1${registerLine.trim()}\n$1$2`,
     );
   } else {
     // Inject a minimal onCreate override before the closing class brace.
